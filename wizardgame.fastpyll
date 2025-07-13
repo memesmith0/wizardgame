@@ -1,4 +1,4 @@
-;;/*
+ ;;/*
 ;;
 ;;                    GNU GENERAL PUBLIC LICENSE
 ;;                       Version 3, 29 June 2007
@@ -692,54 +692,75 @@
 
 (assign "sgr_reset" (fstring "{csi}0m")) ;;reset all attributes
 
+(assign "block_char" (string "█"))
 
-(def "print_blue_pixel"
-      (list "row" "col")
-
-      (list
-
-       ;;select graphic rendition
-       (assign "sgr_blue_fg" (fstring "{csi}34m")) ;;foreground blue
+(assign "blue" (fstring "34"))
 
 
-       ;;unicode character for a full block
-       (assign "block_char" (string "█"))
+(def "pixel"
+    (list "row" "col" "color_code")
+  (list
+   (assign "sgr_color_fg" (fstring "{csi}{color_code}m"))
 
-       ;;cursor position command
-       (assign "cursor_pos" (fstring "{csi}{row};{col}H"))
+   (assign "cursor_pos" (fstring "{csi}{row};{col}H"))
 
-       ;;combine the sequences to print the square
-       ;;write directly to stdout and flush to ensure immediate display
-       (call (access (access "sys" "stdout") "write") (list (fstring "{cursor_pos}{sgr_blue_fg}{block_char}{sgr_reset}")))
-       (call (access (access "sys" "stdout") "flush") (list "")))
+   (call (access (access "sys" "stdout") "write") (list (fstring "{cursor_pos}{sgr_color_fg}{block_char}{sgr_reset}")))
+   (call (access (access "sys" "stdout") "flush") (list "")))
+  )
 
-      )
+   
 
 
 
 
+(def "erase_pixel"
+    (list "row" "col")
+  (list
+   (assign "cursor_pos" (fstring "{csi}{row};{col}H"))
+
+   (assign "sgr_default_fg_bg" (fstring "{csi}39;49m"))
+
+   (call (access (access "sys" "stdout") "write") (list (fstring "{cursor_pos}{sgr_default_fg_bg} ")))
+   (call (access (access "sys" "stdout") "flush") (list ""))
+   )
+  )
 
 
 
 
-(def "print_blue_square"
-    (list "xa" "ya" "xb" "yb")
+
+(def "square"
+    (list "ya" "xa" "lx" "ly")
 
   (list
   (assign "xa" (add "xa" "1"))
-  (assign "xb" (add "xb" "1"))
   (assign "ya" (add "ya" "1"))
-  (assign "yb" (add "yb" "1"))
+  (assign "xb" (add "xa" "lx"))
+  (assign "yb" (add "ya" "ly"))
 
    (for "j" (range (list (add (subtract "xb"  "xa" ) "1")))
 	(list
 	 (for "k" (range (list (add (subtract "yb" "ya") "1")))
 	      (list
-	       (call "print_blue_pixel" (list (add "xa" "j") (add "ya" "k")))))))))
+	       (call "pixel" (list (add "xa" "j") (add "ya" "k") "blue"))))))))
 
 
 
 
+(def "erase_square"
+    (list "ya" "xa" "lx" "ly")
+
+  (list
+  (assign "xa" (add "xa" "1"))
+  (assign "ya" (add "ya" "1"))
+  (assign "xb" (add "xa" "lx"))
+  (assign "yb" (add "ya" "ly"))
+
+   (for "j" (range (list (add (subtract "xb"  "xa" ) "1")))
+	(list
+	 (for "k" (range (list (add (subtract "yb" "ya") "1")))
+	      (list
+	       (call "erase_pixel" (list (add "xa" "j") (add "ya" "k")))))))))
 
 
 
@@ -788,36 +809,23 @@
    )
   )
 
-(def "erase_square"
-    (list "row" "col")
-  (list
-   (assign "cursor_pos" (fstring "{csi}{row};{col}H"))
-
-   (assign "sgr_default_fg_bg" (fstring "{csi}39;49m"))
-
-   (call (access (access "sys" "stdout") "write") (list (fstring "{cursor_pos}{sgr_default_fg_bg} ")))
-   (call (access (access "sys" "stdout") "flush") (list ""))
-   )
-  )
 
 
 
 (def "draw_x"
     (list "row" "col")
   (list
-   (call "print_blue_pixel" (list "row" "col"))
-   (call "print_blue_pixel" (list (add "row" "1") (add "col" "1")))
+   (call "pixel" (list "row" "col" "blue"))
+   (call "pixel" (list (add "row" "1") (add "col" "1") "blue"))
 
-   (call "print_blue_pixel" (list (add "row" "0") (add "col" "2")))
+   (call "pixel" (list (add "row" "0") (add "col" "2") "blue"))
 
-      (call "print_blue_pixel" (list (add "row" "1") (add "col" "1")))
+      (call "pixel" (list (add "row" "1") (add "col" "1") "blue"))
 
-      (call "print_blue_pixel" (list (add "row" "2") (add "col" "2")))
+      (call "pixel" (list (add "row" "2") (add "col" "2") "blue"))
 
-         (call "print_blue_pixel" (list (add "row" "2") (add "col" "0")))
+         (call "pixel" (list (add "row" "2") (add "col" "0") "blue"))
 
-
-   
    ))
 
 
@@ -826,16 +834,16 @@
 (def "erase_x"
     (list "row" "col")
   (list
-   (call "erase_square" (list "row" "col"))
-   (call "erase_square" (list (add "row" "1") (add "col" "1")))
+   (call "erase_pixel" (list "row" "col"))
+   (call "erase_pixel" (list (add "row" "1") (add "col" "1")))
 
-   (call "erase_square" (list (add "row" "0") (add "col" "2")))
+   (call "erase_pixel" (list (add "row" "0") (add "col" "2")))
 
-   (call "erase_square" (list (add "row" "1") (add "col" "1")))
+   (call "erase_pixel" (list (add "row" "1") (add "col" "1")))
 
-   (call "erase_square" (list (add "row" "2") (add "col" "2")))
+   (call "erase_pixel" (list (add "row" "2") (add "col" "2")))
 
-   (call "erase_square" (list (add "row" "2") (add "col" "0")))
+   (call "erase_pixel" (list (add "row" "2") (add "col" "0")))
 
 
    
@@ -855,9 +863,10 @@
 
   
 
-  (call "print_blue_square" (list "20" "28" "28" "28"))
-  (call "print_blue_square" (list "20" "16" "20" "28"))
-  (call "print_blue_square" (list "28" "16" "28" "28"))
+  (call "square" (list "15" "20" "0" "12"))
+  (call "square" (list "28" "20" "8" "0"))
+  (call "square" (list "15" "28" "0" "12"))
+
 
 
   (for "i" (range (list "24"))
@@ -893,9 +902,16 @@
 
 
     	(call "draw_x" (list "24" "21"))
-	  (call (access "time" "sleep") (list "5"))
+	(call (access "time" "sleep") (list "5"))
+
+	(call "erase_x" (list "24" "21"))
+
+	
   
 
+  (call "erase_square" (list "15" "20" "0" "12"))
+  (call "erase_square" (list "28" "20" "8" "0"))
+  (call "erase_square" (list "15" "28" "0" "12"))
 
 
 
