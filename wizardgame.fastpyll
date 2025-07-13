@@ -786,8 +786,6 @@
 	       (call "pixel" (list (add "xa" "j") (add "ya" "k") "color"))))))))
 
 
-
-
 (def "erase_square"
     (list "ya" "xa" "lx" "ly")
 
@@ -820,19 +818,30 @@
 
 
 
+(assign "man" (array
+		    (list
 
+		    (array (list "0" "1" "0" "0" "blue"))
 
+		    (array (list "0" "3" "0" "0" "blue"))
 
+		    (array (list "1" "2" "0" "0" "blue"))
 
-(def "draw_x"
-    (list "row" "col" "color")
-  (list
+		    (array (list "2" "3" "0" "0" "blue"))
 
-   (call "sprite" (list
-		   "row"
-		   "col"
+		    (array (list "2" "1" "0" "0" "blue"))
 
-		   (array
+		    (array (list "1" "1" "0" "0" "blue"))
+
+		    (array (list "1" "0" "0" "0" "blue"))
+		    
+
+		    )
+		    
+
+		    ))
+
+(assign "x" (array
 		    (list
 
 		    (array (list "0" "0" "0" "0" "blue"))
@@ -849,9 +858,8 @@
 		    
 
 		    )
+	)
 
-		   )
-	 )
    
 ;   (call "pixel" (list "row" "col" "blue"))
 ;   (call "pixel" (list (add "row" "1") (add "col" "1") "blue"))
@@ -864,31 +872,30 @@
 ;
 ;         (call "pixel" (list (add "row" "2") (add "col" "0") "blue"))
 
-   ))
 
 
 
 
-(def "erase_x"
-    (list "row" "col")
+
+(def "erase_sprite"
+    (list "row" "col" "sprite")
   (list
-   (call "erase_pixel" (list "row" "col"))
-   (call "erase_pixel" (list (add "row" "0") (add "col" "1")))
 
-   (call "erase_pixel" (list (add "row" "0") (add "col" "2")))
+   (for "i" "sprite"
 
-   (call "erase_pixel" (list (add "row" "1") (add "col" "1")))
+	(list
 
-   (call "erase_pixel" (list (add "row" "2") (add "col" "2")))
 
-   (call "erase_pixel" (list (add "row" "2") (add "col" "0")))
+	 (call "erase_square" (list (add "row "(access "i" "0")) (add "col" (access "i" "1")) (access "i" "2") (access "i" "3")))
 
+
+	 )
 
    
-   ))
+   )))
 
 
-
+(assign "sprite_foo" "x")
 
 
 (def "main"
@@ -906,7 +913,8 @@
   (call "square" (list "15" "28" "0" "12" "blue" ))
 
 
-;  (call "draw_x" (list "0" "0" "blue"))
+;  (call "sprite"  (list "1" "1" "sprite_foo"))
+;  (call "erase_sprite" (list "1" "1;" "sprite_foo"))
 ;  (call (dot "time" "sleep") (list "10"))
 
   
@@ -916,10 +924,10 @@
   (for "i" (range (list "23"))
        (list
 
-	(call "draw_x" (list "0" "i" "blue"))
+	(call "sprite" (list "0" "i" "sprite_foo"))
 	  (call (dot "time" "sleep") (list "0.01"))
 
-	  (call "erase_x" (list (add "i" "1") "1"))
+	  (call "erase_sprite" (list "0" "i" "sprite_foo"))
 	)
 
        )
@@ -930,11 +938,11 @@
 
 
 
-	(call "draw_x" (list  "i" "23" "blue"))
+	(call "sprite" (list  "i" "23" "sprite_foo"))
 
 	(call (dot "time" "sleep") (list "0.01"))
 
-		  (call "erase_x" (list "24" (add "1" "i") ))
+		  (call "erase_sprite" (list "i" "23" "sprite_foo"))
 
 
 
@@ -943,17 +951,17 @@
 	 )
 
 
-    	(call "draw_x" (list "20" "23" "blue"))
+    	(call "sprite" (list "20" "23" "sprite_foo"))
 	(call (dot "time" "sleep") (list "5"))
 
-;	(call "erase_x" (list "24" "21"))
+	(call "erase_sprite" (list "20" "23" "sprite_foo"))
 
 	
   
 
-;  (call "erase_square" (list "15" "20" "0" "12"))
-;  (call "erase_square" (list "28" "20" "8" "0"))
-;  (call "erase_square" (list "15" "28" "0" "12"))
+  (call "erase_square" (list "15" "20" "0" "12"))
+  (call "erase_square" (list "28" "20" "8" "0"))
+  (call "erase_square" (list "15" "28" "0" "12"))
 
 
 
