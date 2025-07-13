@@ -807,9 +807,9 @@
 
 
 (def "sprite"
-    (list "sprite" "x" "y")
+    (list "x" "y" "the_sprite")
   (list
-   (for "i" "sprite"
+   (for "i" "the_sprite"
 	(list
 
 	  (call "square" (list (add "x" (access "i" "0")) (add "y" (access "i" "1")) (access "i" "2") (access "i" "3") (access "i" "4") ))
@@ -825,18 +825,44 @@
 
 
 (def "draw_x"
-    (list "row" "col")
+    (list "row" "col" "color")
   (list
-   (call "pixel" (list "row" "col" "blue"))
-   (call "pixel" (list (add "row" "1") (add "col" "1") "blue"))
 
-   (call "pixel" (list (add "row" "0") (add "col" "2") "blue"))
+   (call "sprite" (list
+		   "row"
+		   "col"
 
-      (call "pixel" (list (add "row" "1") (add "col" "1") "blue"))
+		   (array
+		    (list
 
-      (call "pixel" (list (add "row" "2") (add "col" "2") "blue"))
+		    (array (list "0" "0" "0" "0" "blue"))
 
-         (call "pixel" (list (add "row" "2") (add "col" "0") "blue"))
+		    (array (list "0" "2" "0" "0" "blue"))
+
+		    (array (list "1" "1" "0" "0" "blue"))
+
+		    (array (list "2" "2" "0" "0" "blue"))
+
+		    (array (list "2" "0" "0" "0" "blue"))
+
+		    )
+		    
+
+		    )
+
+		   )
+	 )
+   
+;   (call "pixel" (list "row" "col" "blue"))
+;   (call "pixel" (list (add "row" "1") (add "col" "1") "blue"))
+;
+;   (call "pixel" (list (add "row" "0") (add "col" "2") "blue"))
+;
+;      (call "pixel" (list (add "row" "1") (add "col" "1") "blue"))
+;
+;      (call "pixel" (list (add "row" "2") (add "col" "2") "blue"))
+;
+;         (call "pixel" (list (add "row" "2") (add "col" "0") "blue"))
 
    ))
 
@@ -847,7 +873,7 @@
     (list "row" "col")
   (list
    (call "erase_pixel" (list "row" "col"))
-   (call "erase_pixel" (list (add "row" "1") (add "col" "1")))
+   (call "erase_pixel" (list (add "row" "0") (add "col" "1")))
 
    (call "erase_pixel" (list (add "row" "0") (add "col" "2")))
 
@@ -880,31 +906,35 @@
   (call "square" (list "15" "28" "0" "12" "blue" ))
 
 
+;  (call "draw_x" (list "0" "0" "blue"))
+;  (call (dot "time" "sleep") (list "10"))
 
-  (for "i" (range (list "24"))
+  
+
+
+
+  (for "i" (range (list "23"))
        (list
 
-	(call "draw_x" (list (add "i" "1") "1"))
-
+	(call "draw_x" (list "0" "i" "blue"))
 	  (call (dot "time" "sleep") (list "0.01"))
 
 	  (call "erase_x" (list (add "i" "1") "1"))
-
 	)
 
        )
 
 
-    (for "i" (range (list "21"))
+    (for "i" (range (list "20"))
 	 (list
 
 
 
-	(call "draw_x" (list "24" (add "i" "1")))
+	(call "draw_x" (list  "i" "23" "blue"))
 
 	(call (dot "time" "sleep") (list "0.01"))
 
-		  (call "erase_x" (list "24" (add "i" "1")))
+		  (call "erase_x" (list "24" (add "1" "i") ))
 
 
 
@@ -913,17 +943,17 @@
 	 )
 
 
-    	(call "draw_x" (list "24" "21"))
+    	(call "draw_x" (list "20" "23" "blue"))
 	(call (dot "time" "sleep") (list "5"))
 
-	(call "erase_x" (list "24" "21"))
+;	(call "erase_x" (list "24" "21"))
 
 	
   
 
-  (call "erase_square" (list "15" "20" "0" "12"))
-  (call "erase_square" (list "28" "20" "8" "0"))
-  (call "erase_square" (list "15" "28" "0" "12"))
+;  (call "erase_square" (list "15" "20" "0" "12"))
+;  (call "erase_square" (list "28" "20" "8" "0"))
+;  (call "erase_square" (list "15" "28" "0" "12"))
 
 
 
