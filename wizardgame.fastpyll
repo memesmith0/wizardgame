@@ -1,4 +1,4 @@
- ;;/*
+;;/*
 ;;
 ;;                    GNU GENERAL PUBLIC LICENSE
 ;;                       Version 3, 29 June 2007
@@ -49,7 +49,7 @@
 ;;changed, so that their problems will not be attributed erroneously to
 ;;authors of previous versions.
 ;;
-;;  Some devices are designed to deny users access to install or run
+;;  Some devices are designed to deny users dot to install or run
 ;;modified versions of the software inside them, although the manufacturer
 ;;can do so.  This is fundamentally incompatible with the aim of
 ;;protecting users' freedom to change the software.  The systematic
@@ -239,7 +239,7 @@
 ;;and which are not combined with it such as to form a larger program,
 ;;in or on a volume of a storage or distribution medium, is called an
 ;;"aggregate" if the compilation and its resulting copyright are not
-;;used to limit the access or legal rights of the compilation's users
+;;used to limit the dot or legal rights of the compilation's users
 ;;beyond what the individual works permit.  Inclusion of a covered work
 ;;in an aggregate does not cause this License to apply to the other
 ;;parts of the aggregate.
@@ -265,7 +265,7 @@
 ;;    product that is covered by this License, on a durable physical
 ;;    medium customarily used for software interchange, for a price no
 ;;    more than your reasonable cost of physically performing this
-;;    conveying of source, or (2) access to copy the
+;;    conveying of source, or (2) dot to copy the
 ;;    Corresponding Source from a network server at no charge.
 ;;
 ;;    c) Convey individual copies of the object code with a copy of the
@@ -274,8 +274,8 @@
 ;;    only if you received the object code with such an offer, in accord
 ;;    with subsection 6b.
 ;;
-;;    d) Convey the object code by offering access from a designated
-;;    place (gratis or for a charge), and offer equivalent access to the
+;;    d) Convey the object code by offering dot from a designated
+;;    place (gratis or for a charge), and offer equivalent dot to the
 ;;    Corresponding Source in the same way through the same place at no
 ;;    further charge.  You need not require recipients to copy the
 ;;    Corresponding Source along with the object code.  If the place to
@@ -331,7 +331,7 @@
 ;;  The requirement to provide Installation Information does not include a
 ;;requirement to continue to provide support service, warranty, or updates
 ;;for a work that has been modified or installed by the recipient, or for
-;;the User Product in which it has been modified or installed.  Access to a
+;;the User Product in which it has been modified or installed.  Dot to a
 ;;network may be denied when the modification itself materially and
 ;;adversely affects the operation of the network or violates the rules and
 ;;protocols for communication across the network.
@@ -501,7 +501,7 @@
 ;;  If you convey a covered work, knowingly relying on a patent license,
 ;;and the Corresponding Source of the work is not available for anyone
 ;;to copy, free of charge and under the terms of this License, through a
-;;publicly available network server or other readily accessible means,
+;;publicly available network server or other readily dotible means,
 ;;then you must either (1) cause the Corresponding Source to be so
 ;;available, or (2) arrange to deprive yourself of the benefit of the
 ;;patent license for this particular work, or (3) arrange, in a manner
@@ -697,6 +697,47 @@
 (assign "blue" (fstring "34"))
 
 
+
+(def "setup_terminal"
+    (list "")
+  (list
+   
+					;hide cursor
+   (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}?25l")))
+
+					;clear screen
+   (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}2J")))
+
+   ;;move cursor to home
+   (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}H")))
+   (call (dot (dot "sys" "stdout") "flush") (list ""))))
+
+
+(def "restore_terminal"
+    (list (assign "final_row" none) (assign "final_col" none))
+
+  (list
+
+   (pif (pand (pnot (equal "final_row" none) ) (pnot (equal "final_col" none)))
+	(list
+	 (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}{final_row};{final_col}H")))
+	 )
+	)
+   (pelse
+    (list
+     (assign "foo" (multiply "2" (dot "os" "linesep")))
+     (call (dot (dot "sys" "stdout") "write") (list (fstring "{foo}")))))
+
+
+					;show cursor
+   (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}?25h")))
+   (call (dot (dot "sys" "stdout") "flush") (list ""))
+     
+   )
+  )
+
+
+
 (def "pixel"
     (list "row" "col" "color_code")
   (list
@@ -704,8 +745,8 @@
 
    (assign "cursor_pos" (fstring "{csi}{row};{col}H"))
 
-   (call (access (access "sys" "stdout") "write") (list (fstring "{cursor_pos}{sgr_color_fg}{block_char}{sgr_reset}")))
-   (call (access (access "sys" "stdout") "flush") (list "")))
+   (call (dot (dot "sys" "stdout") "write") (list (fstring "{cursor_pos}{sgr_color_fg}{block_char}{sgr_reset}")))
+   (call (dot (dot "sys" "stdout") "flush") (list "")))
   )
 
    
@@ -720,8 +761,8 @@
 
    (assign "sgr_default_fg_bg" (fstring "{csi}39;49m"))
 
-   (call (access (access "sys" "stdout") "write") (list (fstring "{cursor_pos}{sgr_default_fg_bg} ")))
-   (call (access (access "sys" "stdout") "flush") (list ""))
+   (call (dot (dot "sys" "stdout") "write") (list (fstring "{cursor_pos}{sgr_default_fg_bg} ")))
+   (call (dot (dot "sys" "stdout") "flush") (list ""))
    )
   )
 
@@ -730,7 +771,7 @@
 
 
 (def "square"
-    (list "ya" "xa" "lx" "ly")
+    (list "ya" "xa" "lx" "ly" "color")
 
   (list
   (assign "xa" (add "xa" "1"))
@@ -742,7 +783,7 @@
 	(list
 	 (for "k" (range (list (add (subtract "yb" "ya") "1")))
 	      (list
-	       (call "pixel" (list (add "xa" "j") (add "ya" "k") "blue"))))))))
+	       (call "pixel" (list (add "xa" "j") (add "ya" "k") "color"))))))))
 
 
 
@@ -765,49 +806,20 @@
 
 
 
-
-
-
-
-
-
-(def "setup_terminal"
-    (list "")
+(def "sprite"
+    (list "sprite" "x" "y")
   (list
-   
-					;hide cursor
-   (call (access (access "sys" "stdout") "write") (list (fstring "{csi}?25l")))
-
-					;clear screen
-   (call (access (access "sys" "stdout") "write") (list (fstring "{csi}2J")))
-
-   ;;move cursor to home
-   (call (access (access "sys" "stdout") "write") (list (fstring "{csi}H")))
-   (call (access (access "sys" "stdout") "flush") (list ""))))
-
-
-(def "restore_terminal"
-    (list (assign "final_row" none) (assign "final_col" none))
-
-  (list
-
-   (pif (pand (pnot (equal "final_row" none) ) (pnot (equal "final_col" none)))
+   (for "i" "sprite"
 	(list
-	 (call (access (access "sys" "stdout") "write") (list (fstring "{csi}{final_row};{final_col}H")))
+
+	  (call "square" (list (add "x" (access "i" "0")) (add "y" (access "i" "1")) (access "i" "2") (access "i" "3") (access "i" "4") ))
 	 )
 	)
-   (pelse
-    (list
-     (assign "foo" (multiply "2" (access "os" "linesep")))
-     (call (access (access "sys" "stdout") "write") (list (fstring "{foo}")))))
-
-
-					;show cursor
-   (call (access (access "sys" "stdout") "write") (list (fstring "{csi}?25h")))
-   (call (access (access "sys" "stdout") "flush") (list ""))
-     
    )
   )
+
+
+
 
 
 
@@ -863,9 +875,9 @@
 
   
 
-  (call "square" (list "15" "20" "0" "12"))
-  (call "square" (list "28" "20" "8" "0"))
-  (call "square" (list "15" "28" "0" "12"))
+  (call "square" (list "15" "20" "0" "12" "blue"))
+  (call "square" (list "28" "20" "8" "0" "blue"))
+  (call "square" (list "15" "28" "0" "12" "blue" ))
 
 
 
@@ -874,7 +886,7 @@
 
 	(call "draw_x" (list (add "i" "1") "1"))
 
-	  (call (access "time" "sleep") (list "0.01"))
+	  (call (dot "time" "sleep") (list "0.01"))
 
 	  (call "erase_x" (list (add "i" "1") "1"))
 
@@ -890,7 +902,7 @@
 
 	(call "draw_x" (list "24" (add "i" "1")))
 
-	(call (access "time" "sleep") (list "0.01"))
+	(call (dot "time" "sleep") (list "0.01"))
 
 		  (call "erase_x" (list "24" (add "i" "1")))
 
@@ -902,7 +914,7 @@
 
 
     	(call "draw_x" (list "24" "21"))
-	(call (access "time" "sleep") (list "5"))
+	(call (dot "time" "sleep") (list "5"))
 
 	(call "erase_x" (list "24" "21"))
 
@@ -936,4 +948,4 @@
 		   ;;handle ctrl + c gracefully
 		   (call "restore_terminal" (list ""))
 		   (print (list (string "\\nExiting.")))
-		   (call (access "sys" "exit") (list "0"))))))
+		   (call (dot "sys" "exit") (list "0"))))))
