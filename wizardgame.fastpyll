@@ -693,7 +693,7 @@
 (assign "sgr_reset" (fstring "{csi}0m")) ;;reset all attributes
 
 
-(def "print_blue_square"
+(def "print_blue_pixel"
       (list "row" "col")
 
       (list
@@ -714,6 +714,40 @@
        (call (access (access "sys" "stdout") "flush") (list "")))
 
       )
+
+
+
+
+
+
+
+
+(def "print_blue_square"
+    (list "xa" "ya" "xb" "yb")
+
+  (list
+  (assign "xa" (add "xa" "1"))
+  (assign "xb" (add "xb" "1"))
+  (assign "ya" (add "ya" "1"))
+  (assign "yb" (add "yb" "1"))
+
+   (for "j" (range (list (add (subtract "xb"  "xa" ) "1")))
+	(list
+	 (for "k" (range (list (add (subtract "yb" "ya") "1")))
+	      (list
+	       (call "print_blue_pixel" (list (add "xa" "j") (add "ya" "k")))))))))
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 (def "setup_terminal"
@@ -771,16 +805,16 @@
 (def "draw_x"
     (list "row" "col")
   (list
-   (call "print_blue_square" (list "row" "col"))
-   (call "print_blue_square" (list (add "row" "1") (add "col" "1")))
+   (call "print_blue_pixel" (list "row" "col"))
+   (call "print_blue_pixel" (list (add "row" "1") (add "col" "1")))
 
-   (call "print_blue_square" (list (add "row" "0") (add "col" "2")))
+   (call "print_blue_pixel" (list (add "row" "0") (add "col" "2")))
 
-      (call "print_blue_square" (list (add "row" "1") (add "col" "1")))
+      (call "print_blue_pixel" (list (add "row" "1") (add "col" "1")))
 
-      (call "print_blue_square" (list (add "row" "2") (add "col" "2")))
+      (call "print_blue_pixel" (list (add "row" "2") (add "col" "2")))
 
-         (call "print_blue_square" (list (add "row" "2") (add "col" "0")))
+         (call "print_blue_pixel" (list (add "row" "2") (add "col" "0")))
 
 
    
@@ -807,6 +841,10 @@
    
    ))
 
+
+
+
+
 (def "main"
     (list "")
 (list
@@ -815,457 +853,48 @@
   ;;drawa  blue square at row 20 column 20
 
 
-  (call "print_blue_square" (list "20" "20"))
-
-
-  (call "print_blue_square" (list "20" "21"))
-
-  (call "print_blue_square" (list "20" "22"))
-
-  (call "print_blue_square" (list "20" "23"))
-
-  (call "print_blue_square" (list "20" "24"))
-
-  (call "print_blue_square" (list "20" "25"))
-
-  (call "print_blue_square" (list "20" "26"))
-
-  (call "print_blue_square" (list "20" "27"))
-
-  (call "print_blue_square" (list "20" "28"))
-
-  (call "print_blue_square" (list "27" "20"))
-
-  (call "print_blue_square" (list "27" "21"))
-
-  (call "print_blue_square" (list "27" "22"))
-
-  (call "print_blue_square" (list "27" "23"))
-
-  (call "print_blue_square" (list "27" "24"))
-
-  (call "print_blue_square" (list "27" "25"))
-
-  (call "print_blue_square" (list "27" "26"))
-
-  (call "print_blue_square" (list "27" "27"))
-
-  (call "print_blue_square" (list "27" "28"))
-
-  (call "print_blue_square" (list "20" "29"))
-  (call "print_blue_square" (list "21" "29"))
-  (call "print_blue_square" (list "22" "29"))
-  (call "print_blue_square" (list "23" "29"))
-  (call "print_blue_square" (list "24" "29"))
-  (call "print_blue_square" (list "25" "29"))
-  (call "print_blue_square" (list "26" "29"))
-    (call "print_blue_square" (list "27" "29"))
-
   
 
-  (call "draw_x" (list "1" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "1" "1"))
+  (call "print_blue_square" (list "20" "28" "28" "28"))
+  (call "print_blue_square" (list "20" "16" "20" "28"))
+  (call "print_blue_square" (list "28" "16" "28" "28"))
 
 
+  (for "i" (range (list "24"))
+       (list
 
-    (call "draw_x" (list "2" "1"))
+	(call "draw_x" (list (add "i" "1") "1"))
 
-  (call (access "time" "sleep") (list "0.2"))
+	  (call (access "time" "sleep") (list "0.01"))
 
-  (call "erase_x" (list "2" "1"))
+	  (call "erase_x" (list (add "i" "1") "1"))
+
+	)
+
+       )
 
 
-
-
-    (call "draw_x" (list "3" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "3" "1"))
-
+    (for "i" (range (list "21"))
+	 (list
 
 
 
-    (call "draw_x" (list "4" "1"))
+	(call "draw_x" (list "24" (add "i" "1")))
 
-  (call (access "time" "sleep") (list "0.2"))
+	(call (access "time" "sleep") (list "0.01"))
 
-  (call "erase_x" (list "4" "1"))
-
-
-
-
-    (call "draw_x" (list "5" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "5" "1"))
+		  (call "erase_x" (list "24" (add "i" "1")))
 
 
 
+	)
 
-    (call "draw_x" (list "6" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "6" "1"))
+	 )
 
 
-
-
-    (call "draw_x" (list "7" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "7" "1"))
-
-
-
-
-    (call "draw_x" (list "8" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "8" "1"))
-
+    	(call "draw_x" (list "24" "21"))
+	  (call (access "time" "sleep") (list "5"))
   
-    (call "draw_x" (list "9" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "9" "1"))
-
-
-    
-    (call "draw_x" (list "10" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "10" "1"))
-
-    (call "draw_x" (list "11" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "11" "1"))
-
-
-      
-    (call "draw_x" (list "12" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "12" "1"))
-
-
-
-        
-    (call "draw_x" (list "13" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "13" "1"))
-
-
-  
-
-        
-    (call "draw_x" (list "14" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "14" "1"))
-
-
-
-    
-
-        
-    (call "draw_x" (list "15" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "15" "1"))
-
-
-
-          
-    (call "draw_x" (list "16" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "16" "1"))
-
-
-
-
-      (call "draw_x" (list "17" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "17" "1"))
-
-
-  
-
-      (call "draw_x" (list "18" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "18" "1"))
-
-
-  
-
-      (call "draw_x" (list "19" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "19" "1"))
-
-
-
-
-      (call "draw_x" (list "20" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "20" "1"))
-
-
-  
-      (call "draw_x" (list "21" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "21" "1"))
-
-
-  
-      (call "draw_x" (list "22" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "1"))
-  
-      (call "draw_x" (list "22" "1"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "1"))
-
-  
-  
-      (call "draw_x" (list "22" "2"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "2"))
-
-
-
-  
-      (call "draw_x" (list "22" "3"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "3"))
-
-  
-  
-
-  
-      (call "draw_x" (list "22" "4"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "4"))
-
-
-
-  
-  
-      (call "draw_x" (list "22" "5"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "5"))
-
-
-  
-      (call "draw_x" (list "22" "6"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "6"))
-
-
-    
-      (call "draw_x" (list "22" "7"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "7"))
-
-
-      
-      (call "draw_x" (list "22" "8"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "8"))
-
-
-
-
-        
-      (call "draw_x" (list "22" "9"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "9"))
-
-
-
-
-        
-      (call "draw_x" (list "22" "10"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "10"))
-
-
-        
-      (call "draw_x" (list "22" "11"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "11"))
-
-
-          
-      (call "draw_x" (list "22" "12"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "12"))
-
-
-          
-      (call "draw_x" (list "22" "13"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "13"))
-
-
-
-          
-      (call "draw_x" (list "22" "14"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "14"))
-
-
-  
-          
-      (call "draw_x" (list "22" "15"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "15"))
-
-
-
-            
-      (call "draw_x" (list "22" "16"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "16"))
-
-
-
-
-  
-            
-      (call "draw_x" (list "22" "17"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "17"))
-
-
-
-
-            
-      (call "draw_x" (list "22" "18"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-  (call "erase_x" (list "22" "18"))
-
-
-
-
-              
-      (call "draw_x" (list "22" "19"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-
-  (call "erase_x" (list "22" "19"))
-
-
-
-              
-      (call "draw_x" (list "22" "20"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-
-  (call "erase_x" (list "22" "20"))
-
-
-
-              
-      (call "draw_x" (list "22" "21"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-
-  (call "erase_x" (list "22" "21"))
-
-
-
-                
-      (call "draw_x" (list "22" "22"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-
-  (call "erase_x" (list "22" "22"))
-
-
-
-  
-
-                
-      (call "draw_x" (list "22" "23"))
-
-  (call (access "time" "sleep") (list "0.2"))
-
-
-  (call "erase_x" (list "22" "3"))
-
-
-
-
 
 
 
