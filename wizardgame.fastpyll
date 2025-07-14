@@ -682,6 +682,10 @@
 (import "sys")
 (import "os")
 (import "time")
+(import "termios")
+(import "tty")
+(import "select")
+	
 
 
 ;;ansi escape character
@@ -696,7 +700,8 @@
 
 (assign "blue" (fstring "34"))
 
-
+(assign "_original_terminal_settings" none)
+(assign "_fd" none)
 
 (def "setup_terminal"
     (list "")
@@ -712,6 +717,31 @@
    (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}H")))
    (call (dot (dot "sys" "stdout") "flush") (list ""))))
 
+(def "set_terminal_raw_mode"
+    (list "")
+  (list
+   (global (intersperse (list "_original_terminal_settings" "_fd")))
+
+   (assign "_fd" (call (dot (dot "sys" "stdin") "fileno") (list "")))
+   (assign "_original_terminal_settings" (call (dot "termios" "tcgetattr") (list "_fd")))
+
+   (assign "new_settings" (call (dot "termios" "tcgetattr") (list "_fd")))
+
+   (assign (access "new_settings" "3") (set-intersection (access "new_settings" "3") (tilda (group (set-union (dot "termios" "ICANON") (dot "termios" "ECHO"))))))
+
+   (assign (access (access "new_settings" "6") (dot "termios" "VMIN")) "0")
+   (assign (access (access "new_settings" "6") (dot "termios" "VTIME")) "0")
+
+   (call (dot "termios" "tcsetattr") (list "_fd" (dot "termios" "TCSANOW") "new_settings"))))
+
+(def "restore_terminal_mode"
+    (list "")
+	  (list
+	  (global (intersperse (list "_original_terminal_settings" "_fd")))
+	  (pif (pand (pnot (equal "_fd" none)) (pnot (equal "_original_terminal_settings" none)))
+	       (list
+		(call (dot "termios" "tcsetattr") (list "_fd" (dot "termios" "TCSADRAIN")
+							"_original_terminal_settings"))))))
 
 (def "restore_terminal"
     (list (assign "final_row" none) (assign "final_col" none))
@@ -736,6 +766,57 @@
    )
   )
 
+(def "get_char_non_blocking"
+    (list "")
+  (list
+  (assign "fd" (call (dot (dot "sys" "stdin") "fileno") (list "")))
+
+  (assign "old_settings" (call (dot "termios" "tcgetattr") (list "fd")))
+
+  (try
+   (list
+    (assign "new_settings" (call (dot "termios" "tcgetattr") (list "fd")))
+    (assign (access "new_settings" "3") (set-intersection (access "new_settings" "3")
+							  (tilda (group (set-union
+									 (dot "termios" "ICANON") (dot "termios" "ECHO"))))))
+    (assign (access (access "new_settings" "6") (dot "termios" "VMIN")) "0")
+    (assign (access (access "new_settings" "6") (dot "termios" "VTIME")) "0")
+    (call (dot "termios" "tcsetattr") (list "fd" (dot "termios" "TCSANOW") "new_settings"))
+    
+;    (call (dot "tty" "setcbreak") (list "fd"))
+    (assign "char" none)
+    (pif (equal
+	  (call (dot "select" "select")
+		(list
+		 (array (list 
+			 (dot "sys" "stdin")))
+			(array (list ""))
+			(array (list ""))
+			 "0"))
+	  (group
+	   (intersperse
+	    (list
+	    (array
+	     (list
+	      (dot
+	       "sys"
+	       "stdin"
+	       )))
+	    (array (list ""))
+	    (array (list ""))))))
+	 
+	 (list
+	  (assign "char" (call (dot (dot "sys" "stdin") "read")  (list "1")))))))
+
+  (finally
+   (list
+   (call (dot "termios" "tcsetattr") (list
+				      "fd"
+				      (dot "termios" "TCSADRAIN")
+				      "old_settings"))))
+  (return (list "char"))))
+
+    
 
 
 (def "pixel"
@@ -900,7 +981,9 @@
 
 (def "main"
     (list "")
-(list
+  (list
+   (call "set_terminal_raw_mode" (list ""))
+   
   (call "setup_terminal" (list ""))
 
   ;;drawa  blue square at row 20 column 20
@@ -917,47 +1000,48 @@
 ;  (call "erase_sprite" (list "1" "1;" "sprite_foo"))
 ;  (call (dot "time" "sleep") (list "10"))
 
+  (assign "positionx" "0")
+  (assign "positiony" "0")
+
+  (call "sprite" (list "positionx" "positiony" "sprite_foo"))
+
+
+  (assign "continue2" "True")
+
+  (while "continue2"
+    (list
+     (assign "key" (call "get_char_non_blocking" (list "")))
+     (pif (equal "key" "\"q\"")
+	  (list
+	   (assign "continue2" "False")))
+
+     (pelif (equal "key" (string "w"))
+	    (list
+	     (call "erase_sprite" (list "positionx" "positiony" "sprite_foo"))
+	     (assign "positiony" (subtract "positiony" "1"))
+	     (call "sprite" (list "positionx" "positiony" "sprite_foo"))))
+
+     (pelif (equal "key" (string "a"))
+	    (list
+	     (call "erase_sprite" (list "positionx" "positiony" "sprite_foo"))
+	     (assign "positionx" (subtract "positionx" "1"))
+	     (call "sprite" (list "positionx" "positiony" "sprite_foo"))))
+     (pelif (equal "key" (string "s"))
+	    (list
+	     (call "erase_sprite" (list "positionx" "positiony" "sprite_foo"))
+	     (assign "positiony" (add "positiony" "1"))
+	     (call "sprite" (list "positionx" "positiony" "sprite_foo"))))
+     (pelif (equal "key" (string "d"))
+	    (list
+	     (call "erase_sprite" (list "positionx" "positiony" "sprite_foo"))
+	     (assign "positionx" (add "positionx" "1"))
+	     (call "sprite" (list "positionx" "positiony" "sprite_foo"))))
+     (call (dot "time" "sleep") (list "0.01"))
+     ))
+
+	   
   
 
-
-
-  (for "i" (range (list "23"))
-       (list
-
-	(call "sprite" (list "0" "i" "sprite_foo"))
-	  (call (dot "time" "sleep") (list "0.01"))
-
-	  (call "erase_sprite" (list "0" "i" "sprite_foo"))
-	)
-
-       )
-
-
-    (for "i" (range (list "20"))
-	 (list
-
-
-
-	(call "sprite" (list  "i" "23" "sprite_foo"))
-
-	(call (dot "time" "sleep") (list "0.01"))
-
-		  (call "erase_sprite" (list "i" "23" "sprite_foo"))
-
-
-
-	)
-
-	 )
-
-
-    	(call "sprite" (list "20" "23" "sprite_foo"))
-	(call (dot "time" "sleep") (list "5"))
-
-	(call "erase_sprite" (list "20" "23" "sprite_foo"))
-
-	
-  
 
   (call "erase_square" (list "15" "20" "0" "12"))
   (call "erase_square" (list "28" "20" "8" "0"))
@@ -972,18 +1056,28 @@
 					;restore the terminal: move the cursor to a safe spot and show it
   (call "restore_terminal" (list ""))
 
+  (pif (pand (pnot (equal "old_term_settings" none)) (pnot (equal "fd" none)))
+       (list
+       (call "restore_terminal_mode" (list "old_term_settings" "fd"))))
+  (call (dot "sys" "exit") (list "0"))
+
+  (pass)
+
   )
 )
 
-  (pif (equal "__name__" (string "__main__"))
-       (list
-	(try
-	 (list
-	  (call "main" (list ""))
-	  ))
-	  (except "KeyboardInterrupt"
-		  (list
-		   ;;handle ctrl + c gracefully
-		   (call "restore_terminal" (list ""))
-		   (print (list (string "\\nExiting.")))
-		   (call (dot "sys" "exit") (list "0"))))))
+(pif (equal "__name__" (string "__main__"))
+     (list
+     (try
+      (list
+       (call "main" (list ""))
+       ))
+     (except "KeyboardInterrupt"
+	     (list (print (list (string "\\nExiting"))))
+	     )
+     (finally
+      (list
+       (call "restore_terminal" (list ""))
+       (call "restore_terminal_mode" (list ""))
+       (call (dot "sys" "exit") (list "0")))))
+)
