@@ -809,36 +809,44 @@
   (assign "continue2" true)
 
   (while "continue2"
-    (list
-     (assign "key" (call "get_char_non_blocking" (list "")))
-     (pif (equal "key" "\"q\"")
-	  (list
-	   (assign "continue2" "False")))
+	 (list
+	  (for "i" (range (list "1000"))
+	       (list
+		(assign "key" (call "get_char_non_blocking" (list "")))
+		(pif (equal "key" "\"q\"")
+		     (list
+		      (assign "continue2" "False")))
 
-     (pelif (equal "key" (string "w"))
-	    (list
-	     (call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))
-	     (assign "positiony" (subtract "positiony" "1"))
-	     (call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))))
+		(pelif (equal "key" (string "w"))
+		       (list
+			(call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))
+			(assign "positiony" (subtract "positiony" "1"))
+			(call "foreground_sprite" (list "positionx" "positiony" "sprite_foo"))))
 
-     (pelif (equal "key" (string "a"))
-	    (list
-	     (call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))
-	     (assign "positionx" (subtract "positionx" "1"))
-	     (call "foreground_sprite" (list "positionx" "positiony" "sprite_foo"))))
-     (pelif (equal "key" (string "s"))
-	    (list
-	     (call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))
-	     (assign "positiony" (add "positiony" "1"))
-	     (call "foreground_sprite" (list "positionx" "positiony" "sprite_foo"))))
-     (pelif (equal "key" (string "d"))
-	    (list
-	     (call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))
-	     (assign "positionx" (add "positionx" "1"))
-	     (call "foreground_sprite" (list "positionx" "positiony" "sprite_foo"))))
-     (call "draw_screen" (list ""))
-     (call (dot "time" "sleep") (list "0.01"))
-     ))
+		(pelif (equal "key" (string "a"))
+		       (list
+			(call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))
+			(assign "positionx" (subtract "positionx" "1"))
+			(call "foreground_sprite" (list "positionx" "positiony" "sprite_foo"))))
+		(pelif (equal "key" (string "s"))
+		       (list
+			(call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))
+			(assign "positiony" (add "positiony" "1"))
+			(call "foreground_sprite" (list "positionx" "positiony" "sprite_foo"))))
+		(pelif (equal "key" (string "d"))
+		       (list
+			(call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))
+			(assign "positionx" (add "positionx" "1"))
+			(call "foreground_sprite" (list "positionx" "positiony" "sprite_foo"))))
+
+		))
+
+	  (call "draw_screen" (list ""))
+	  (call (dot "time" "sleep") (list "0.01"))
+  )
+	 )
+
+
 
 					;restore the terminal: move the cursor to a safe spot and show it
   (call "restore_terminal" (list ""))
