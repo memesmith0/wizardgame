@@ -726,6 +726,12 @@
 (assign "screen"
 	(array
 	 (list
+	  "")))
+
+
+(assign "old_screen"
+	(array
+	 (list
 	   "")))
 		 
 (for
@@ -740,6 +746,21 @@
 		 (call (dot "row_data" "append") (list "black"))))
 
   (call (dot "background_screen" "append") (list "row_data"))))
+
+
+
+(for
+ "r"
+ (range (list "screen_height"))
+ (list
+  (assign "row_data" (array (list "")))
+  (for
+   "c"
+   (range (list "screen_width"))
+	  (list
+		 (call (dot "row_data" "append") (list "black"))))
+
+  (call (dot "old_screen" "append") (list "row_data"))))
 
 
 
@@ -810,7 +831,7 @@
 
   (while "continue2"
 	 (list
-	  (for "i" (range (list "1000"))
+	  (for "i" (range (list "100"))
 	       (list
 		(assign "key" (call "get_char_non_blocking" (list "")))
 		(pif (equal "key" "\"q\"")
@@ -842,7 +863,7 @@
 		))
 
 	  (call "draw_screen" (list ""))
-	  (call (dot "time" "sleep") (list "0.01"))
+	  (call (dot "time" "sleep") (list "0.05"))
   )
 	 )
 
@@ -987,7 +1008,7 @@
    (assign "cursor_position" (fstring "{csi}{row};{col}H"))
 
    (call (dot (dot "sys" "stdout") "write") (list (fstring "{cursor_position}{set_top_color}{set_bottom_color}{block_char}{sgr_reset}")))
-   (call (dot (dot "sys" "stdout") "flush") (list ""))
+;   (call (dot (dot "sys" "stdout") "flush") (list ""))
    )
   )
 
@@ -1002,43 +1023,57 @@
 
 ;;combine the foreground screen with the background screen into the display screen
 
-
    (for "r" (range (list "screen_height"))
 	(list
 	 (for "c" (range (list "screen_width"))
 	      (list
-	       (assign (access (access "screen" "r") "c") (access (access  "background_screen" "r") "c"))
-	       ))))
-
-   (for "r" (range (list "screen_height"))
-	(list
-	 (for "c" (range (list "screen_width"))
-	      (list
+	       (assign (access (access "screen" "r") "c") (access (access "background_screen" "r") "c"))
 	       (pif (not-equal "-1" (access (access "foreground_screen" "r") "c"))
 		    (list
-	       (assign (access (access "screen" "r") "c") (access (access  "foreground_screen" "r") "c"))))
-	       ))))
-
-
-
-;;draw the actual screen
-   (for "i" (range (list (integer-divide "screen_height" "2")))
-	(list
-	 (for "j" (range (list "screen_width"))
-	      (list
-	       (call "pixels" (list (add "i" "0") (add "j" "0")
-				    (access (access "screen" (add "0" (multiply "2" "i"))) "j")
-				    (access (access "screen" (add "1" (multiply "2" "i"))) "j")
-				    )
+		     (assign (access (access "screen" "r") "c") (access (access "foreground_screen" "r") "c"))
 		     )
+		    )
 	       )
 	      )
 	 )
 	)
-   )
-  )
-		     
 
+   ;;draw new pixels to the screen
+   (for "r" (range (list (integer-divide "screen_height" "2")))
+	(list
+	 (for "c" (range (list "screen_width"))
+	      (list
+	       (assign "top" (access (access "screen" (multiply "r" "2")) "c"))
+	       (assign "bottom" (access (access "screen" (add "1" (multiply "r" "2"))) "c"))
+	       (assign "last_top" (access (access "old_screen" (multiply "r" "2")) "c"))
+	       (assign "last_bottom" (access (access "old_screen" (add "1" (multiply "r" "2"))) "c"))
+	       (pif (por (not-equal "top" "last_top") (not-equal "bottom" "last_bottom"))
+		    (list
+		     (call "pixels" (list "r" "c" "top" "bottom"))))))))
+
+
+
+   ;;update old screen
+   (for "r" (range (list "screen_height"))
+	(list
+	 (for "c" (range (list "screen_width"))
+	      (list
+
+	       (assign (access (access "old_screen" "r") "c") (access (access "screen" "r") "c") )
+
+	       )
+
+	      )
+
+	 )
+
+	)
+   (call (dot (dot "sys" "stdout") "flush") (list ""))
+	       
+
+	)
+   )
+  
 
 
 
