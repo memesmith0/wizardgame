@@ -687,13 +687,13 @@
 (import "select")
 
 
-;;ansi escape character
+
 (assign "esc" (string "\\x1b"))
 
-;;control sequence introduce
+
 (assign "csi" (fstring "{esc}["))
 
-(assign "sgr_reset" (fstring "{csi}0m")) ;;reset all attributes
+(assign "sgr_reset" (fstring "{csi}0m"))
 
 (assign "block_char" (string "▀"))
 
@@ -705,8 +705,22 @@
 (assign "_fd" none)
 
 
-(assign "screen_width" "160")
-(assign "screen_height" "80")
+(assign "screen_width" "320")
+(assign "screen_height" "162")
+
+
+
+
+(assign "background_screen"
+	(array
+	 (list
+	   "")))
+
+(assign "foreground_screen"
+	(array
+	 (list
+	   "")))
+
 
 
 (assign "screen"
@@ -714,36 +728,51 @@
 	 (list
 	   "")))
 		 
-
-;for r in range(screen_height * 2): # Iterate for double height
-;    row_data = [] # <---- CHANGE: Create a NEW list for each row
-;    for c in range(screen_width):
-;        # Create a simple checkerboard pattern (or just fill with blue)
-;        if (r + c) % 2 == 0:
-;n            row_data.append(white)
-;        else:
-;            row_data.append(black)
-;screen.append(row_data)
-
-
 (for
  "r"
- (range (list (multiply "screen_height" "2")))
+ (range (list "screen_height"))
  (list
   (assign "row_data" (array (list "")))
   (for
    "c"
    (range (list "screen_width"))
 	  (list
-	   (pif (equal "0" (modulo (add "r" "c") "2"))
-		(list
-		 (call (dot "row_data" "append") (list "blue"))))
-	   (pelse
-	    (list
-	     (call (dot "row_data" "append") (list "blue"))
-	     ))))
+		 (call (dot "row_data" "append") (list "black"))))
+
+  (call (dot "background_screen" "append") (list "row_data"))))
+
+
+
+
+(for
+ "r"
+ (range (list "screen_height"))
+ (list
+  (assign "row_data" (array (list "")))
+  (for
+   "c"
+   (range (list "screen_width"))
+	  (list
+		 (call (dot "row_data" "append") (list "-1"))))
+
+  (call (dot "foreground_screen" "append") (list "row_data"))))
+
+
+(for
+ "r"
+ (range (list "screen_height"))
+ (list
+  (assign "row_data" (array (list "")))
+  (for
+   "c"
+   (range (list "screen_width"))
+	  (list
+		 (call (dot "row_data" "append") (list "black"))))
+
   (call (dot "screen" "append") (list "row_data"))))
-	  
+
+
+
 
 (def "main"
     (list "")
@@ -752,14 +781,23 @@
    
   (call "setup_terminal" (list ""))
 
-  ;;drawa  blue square at row 20 column 20
+
+
+  
+
+  
+
+ (call "foreground_sprite" (list "0" "0" "sprite_foo"))
 
 
 
 
-  (call "pixel" (list "20" "20" "black"))
 
-    (call "draw_screen" (list ""))
+
+
+  
+
+
   
   (assign "positionx" "0")
   (assign "positiony" "0")
@@ -768,7 +806,7 @@
 
 
 
-  (assign "continue2" "True")
+  (assign "continue2" true)
 
   (while "continue2"
     (list
@@ -779,25 +817,26 @@
 
      (pelif (equal "key" (string "w"))
 	    (list
-	     (call "erase_sprite" (list "positionx" "positiony" "sprite_foo"))
+	     (call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))
 	     (assign "positiony" (subtract "positiony" "1"))
-	     (call "sprite" (list "positionx" "positiony" "sprite_foo"))))
+	     (call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))))
 
      (pelif (equal "key" (string "a"))
 	    (list
-	     (call "erase_sprite" (list "positionx" "positiony" "sprite_foo"))
+	     (call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))
 	     (assign "positionx" (subtract "positionx" "1"))
-	     (call "sprite" (list "positionx" "positiony" "sprite_foo"))))
+	     (call "foreground_sprite" (list "positionx" "positiony" "sprite_foo"))))
      (pelif (equal "key" (string "s"))
 	    (list
-	     (call "erase_sprite" (list "positionx" "positiony" "sprite_foo"))
+	     (call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))
 	     (assign "positiony" (add "positiony" "1"))
-	     (call "sprite" (list "positionx" "positiony" "sprite_foo"))))
+	     (call "foreground_sprite" (list "positionx" "positiony" "sprite_foo"))))
      (pelif (equal "key" (string "d"))
 	    (list
-	     (call "erase_sprite" (list "positionx" "positiony" "sprite_foo"))
+	     (call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))
 	     (assign "positionx" (add "positionx" "1"))
-	     (call "sprite" (list "positionx" "positiony" "sprite_foo"))))
+	     (call "foreground_sprite" (list "positionx" "positiony" "sprite_foo"))))
+     (call "draw_screen" (list ""))
      (call (dot "time" "sleep") (list "0.01"))
      ))
 
@@ -819,7 +858,7 @@
 					;clear screen
    (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}2J")))
 
-   ;;move cursor to home
+
    (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}H")))
    (call (dot (dot "sys" "stdout") "flush") (list ""))))
 
@@ -916,9 +955,15 @@
 	    (array (list ""))))))
 	 
 	 (list
-	  (assign "char" (call (dot (dot "sys" "stdin") "read")  (list "1")))))
-
+						  (assign "char" (call (dot (dot "sys" "stdin") "read")  (list "1")))))
+	     	     
   (return (list "char"))))
+
+
+    
+
+
+
 
     
    
@@ -926,6 +971,8 @@
 (def "pixels"
     (list "row" "col" "top_color" "bottom_color")
   (list
+   (assign "row" (add "row" "1"))
+      (assign "col" (add "col" "1"))
    (assign "set_top_color" (fstring "{csi}{top_color}m"))
    (assign "blah" (call "str" (list (add "10" (call "int" (list "bottom_color"))))))
    (assign "set_bottom_color" (fstring "{csi}{blah}m"))
@@ -943,24 +990,46 @@
 (def "draw_screen"
     (list "")
   (list
+
+
+;;combine the foreground screen with the background screen into the display screen
+
+
+   (for "r" (range (list "screen_height"))
+	(list
+	 (for "c" (range (list "screen_width"))
+	      (list
+	       (assign (access (access "screen" "r") "c") (access (access  "background_screen" "r") "c"))
+	       ))))
+
+   (for "r" (range (list "screen_height"))
+	(list
+	 (for "c" (range (list "screen_width"))
+	      (list
+	       (pif (not-equal "-1" (access (access "foreground_screen" "r") "c"))
+		    (list
+	       (assign (access (access "screen" "r") "c") (access (access  "foreground_screen" "r") "c"))))
+	       ))))
+
+
+
+;;draw the actual screen
    (for "i" (range (list (integer-divide "screen_height" "2")))
 	(list
 	 (for "j" (range (list "screen_width"))
 	      (list
-	       (call "pixels" (list (add "i" "1") (add "j" "1") (access (access "screen" (add "1" (group (multiply "i" "2")))) "j")
-				    (access (access "screen" (add "2" (group (multiply "i" "2")))) "j")))
+	       (call "pixels" (list (add "i" "0") (add "j" "0")
+				    (access (access "screen" (add "0" (multiply "2" "i"))) "j")
+				    (access (access "screen" (add "1" (multiply "2" "i"))) "j")
+				    )
+		     )
+	       )
+	      )
 	 )
 	)
    )
-	)
-   )
   )
-				    
-						    
 		     
-	       
-   
-
 
 
 
@@ -968,20 +1037,48 @@
 
 (def "pixel"
 
-    (list "row" "col" "color")
+    (list "which_screen" "col" "row" "color")
   (list
 
-	  (assign (access (access "screen" "row") "col") "color")))
+   (assign (access (access "which_screen" (add "row" "0")) (add "col" "0")) "color")
+   )
+  )
 
 
 
 (def "sprite"
+    (list "which_screen" "x" "y" "the_sprite")
+  (list
+   (for "i" "the_sprite"
+	(list
+
+	  (call "pixel" (list "which_screen" (add "x" (access "i" "0")) (add "y" (access "i" "1")) (access "i" "2")))
+	 )
+	)
+   )
+  )
+
+
+(def "foreground_sprite"
     (list "x" "y" "the_sprite")
   (list
    (for "i" "the_sprite"
 	(list
 
-	  (call "pixels" (list (add "x" (access "i" "0")) (add "y" (access "i" "1")) (access "i" "2") (access "i" "3")))
+	  (call "pixel" (list "foreground_screen" (add "x" (access "i" "0")) (add "y" (access "i" "1")) (access "i" "2")))
+	 )
+	)
+   )
+  )
+
+
+(def "erase_foreground_sprite"
+    (list "x" "y" "the_sprite")
+  (list
+   (for "i" "the_sprite"
+	(list
+
+	  (call "pixel" (list "foreground_screen" (add "x" (access "i" "0")) (add "y" (access "i" "1")) "-1"))
 	 )
 	)
    )
@@ -1028,15 +1125,15 @@
 (assign "x" (array
 		    (list
 
-		    (array (list "0" "0" "blue" "blue"))
+		    (array (list "0" "0" "blue"))
 
-		    (array (list "0" "2" "blue" "blue"))
+		    (array (list "0" "2" "blue"))
 
-		    (array (list "1" "1" "blue" "blue"))
+		    (array (list "1" "1" "blue"))
 
-		    (array (list "2" "2" "blue" "blue"))
+		    (array (list "2" "2" "blue"))
 
-		    (array (list "2" "0" "blue" "blue"))
+		    (array (list "2" "0" "blue"))
 
 		    )
 		    
@@ -1047,47 +1144,15 @@
 (assign "diagonal_line"
 	(array
 	 (list
-	  (array (list "0" "0" "blue" "blue"))
-	  (array (list "1" "1" "black" "blue"))
-	  (array (list "2" "2" "blue" "blue"))
-	  (array (list "3" "3" "blue" "blue"))
-	  (array (list "4" "4" "blue" "blue"))
-	  (array (list "5" "5" "blue" "blue"))
+	  (array (list "0" "0" "blue" ))
+	  (array (list "1" "1" "blue"))
+	  (array (list "2" "2" "blue"))
+	  (array (list "3" "3" "blue"))
+	  (array (list "4" "4" "blue"))
+	  (array (list "5" "5" "blue"))
 	  )))
 
-   
-;   (call "pixels" (list "row" "col" "blue"))
-;   (call "pixels" (list (add "row" "1") (add "col" "1") "blue"))
-;
-;   (call "pixels" (list (add "row" "0") (add "col" "2") "blue"))
-;
-;      (call "pixels" (list (add "row" "1") (add "col" "1") "blue"))
-;
-;      (call "pixels" (list (add "row" "2") (add "col" "2") "blue"))
-;
-;         (call "pixels" (list (add "row" "2") (add "col" "0") "blue"))
 
-
-
-
-
-
-(def "erase_sprite"
-    (list "row" "col" "sprite")
-  (list
-
-   (for "i" "sprite"
-
-	(list
-
-
-	 (call "erase_pixels" (list (add "row" (access "i" "0")) (add "col" (access "i" "1")) ))
-
-
-	 )
-
-   
-   )))
 
 
 (assign "sprite_foo" "diagonal_line")
