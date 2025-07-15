@@ -685,7 +685,6 @@
 (import "termios")
 (import "tty")
 (import "select")
-	
 
 
 ;;ansi escape character
@@ -696,287 +695,27 @@
 
 (assign "sgr_reset" (fstring "{csi}0m")) ;;reset all attributes
 
-(assign "block_char" (string "█"))
+(assign "block_char" (string "▀"))
 
-(assign "blue" (fstring "34"))
+(assign "blue" (string "34"))
+(assign "black" (string "30"))
+(assign "white" (string "37"))
 
 (assign "_original_terminal_settings" none)
 (assign "_fd" none)
 
-(def "setup_terminal"
-    (list "")
-  (list
-   
-					;hide cursor
-   (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}?25l")))
 
-					;clear screen
-   (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}2J")))
+(assign "screen_width" "160")
+(assign "screen_height" "80")
 
-   ;;move cursor to home
-   (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}H")))
-   (call (dot (dot "sys" "stdout") "flush") (list ""))))
-
-(def "set_terminal_raw_mode"
-    (list "")
-  (list
-   (global (intersperse (list "_original_terminal_settings" "_fd")))
-
-   (assign "_fd" (call (dot (dot "sys" "stdin") "fileno") (list "")))
-   (assign "_original_terminal_settings" (call (dot "termios" "tcgetattr") (list "_fd")))
-
-   (assign "new_settings" (call (dot "termios" "tcgetattr") (list "_fd")))
-
-   (assign (access "new_settings" "3") (set-intersection (access "new_settings" "3") (tilda (group (set-union (dot "termios" "ICANON") (dot "termios" "ECHO"))))))
-
-   (assign (access (access "new_settings" "6") (dot "termios" "VMIN")) "0")
-   (assign (access (access "new_settings" "6") (dot "termios" "VTIME")) "0")
-
-   (call (dot "termios" "tcsetattr") (list "_fd" (dot "termios" "TCSANOW") "new_settings"))))
-
-(def "restore_terminal_mode"
-    (list "")
-	  (list
-	  (global (intersperse (list "_original_terminal_settings" "_fd")))
-	  (pif (pand (pnot (equal "_fd" none)) (pnot (equal "_original_terminal_settings" none)))
-	       (list
-		(call (dot "termios" "tcsetattr") (list "_fd" (dot "termios" "TCSADRAIN")
-							"_original_terminal_settings"))))))
-
-(def "restore_terminal"
-    (list (assign "final_row" none) (assign "final_col" none))
-
-  (list
-
-   (pif (pand (pnot (equal "final_row" none) ) (pnot (equal "final_col" none)))
-	(list
-	 (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}{final_row};{final_col}H")))
-	 )
-	)
-   (pelse
-    (list
-     (assign "foo" (multiply "2" (dot "os" "linesep")))
-     (call (dot (dot "sys" "stdout") "write") (list (fstring "{foo}")))))
+(assign "row_of_blues" (array (list (curry (list "blue" "for" "_" "in" (range (list "screen_width")))))))
 
 
-					;show cursor
-   (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}?25h")))
-   (call (dot (dot "sys" "stdout") "flush") (list ""))
-     
-   )
-  )
-
-(def "get_char_non_blocking"
-    (list "")
-  (list
-  (assign "fd" (call (dot (dot "sys" "stdin") "fileno") (list "")))
-
-  (assign "old_settings" (call (dot "termios" "tcgetattr") (list "fd")))
-
-  (try
-   (list
-    (assign "new_settings" (call (dot "termios" "tcgetattr") (list "fd")))
-    (assign (access "new_settings" "3") (set-intersection (access "new_settings" "3")
-							  (tilda (group (set-union
-									 (dot "termios" "ICANON") (dot "termios" "ECHO"))))))
-    (assign (access (access "new_settings" "6") (dot "termios" "VMIN")) "0")
-    (assign (access (access "new_settings" "6") (dot "termios" "VTIME")) "0")
-    (call (dot "termios" "tcsetattr") (list "fd" (dot "termios" "TCSANOW") "new_settings"))
-    
-;    (call (dot "tty" "setcbreak") (list "fd"))
-    (assign "char" none)
-    (pif (equal
-	  (call (dot "select" "select")
-		(list
-		 (array (list 
-			 (dot "sys" "stdin")))
-			(array (list ""))
-			(array (list ""))
-			 "0"))
-	  (group
-	   (intersperse
-	    (list
-	    (array
-	     (list
-	      (dot
-	       "sys"
-	       "stdin"
-	       )))
-	    (array (list ""))
-	    (array (list ""))))))
-	 
+(assign "screen"
+	(array
 	 (list
-	  (assign "char" (call (dot (dot "sys" "stdin") "read")  (list "1")))))))
-
-  (finally
-   (list
-   (call (dot "termios" "tcsetattr") (list
-				      "fd"
-				      (dot "termios" "TCSADRAIN")
-				      "old_settings"))))
-  (return (list "char"))))
-
-    
-
-
-(def "pixel"
-    (list "row" "col" "color_code")
-  (list
-   (assign "sgr_color_fg" (fstring "{csi}{color_code}m"))
-
-   (assign "cursor_pos" (fstring "{csi}{row};{col}H"))
-
-   (call (dot (dot "sys" "stdout") "write") (list (fstring "{cursor_pos}{sgr_color_fg}{block_char}{sgr_reset}")))
-   (call (dot (dot "sys" "stdout") "flush") (list "")))
-  )
-
-   
-
-
-
-
-(def "erase_pixel"
-    (list "row" "col")
-  (list
-   (assign "cursor_pos" (fstring "{csi}{row};{col}H"))
-
-   (assign "sgr_default_fg_bg" (fstring "{csi}39;49m"))
-
-   (call (dot (dot "sys" "stdout") "write") (list (fstring "{cursor_pos}{sgr_default_fg_bg} ")))
-   (call (dot (dot "sys" "stdout") "flush") (list ""))
-   )
-  )
-
-
-
-
-
-(def "square"
-    (list "ya" "xa" "lx" "ly" "color")
-
-  (list
-  (assign "xa" (add "xa" "1"))
-  (assign "ya" (add "ya" "1"))
-  (assign "xb" (add "xa" "lx"))
-  (assign "yb" (add "ya" "ly"))
-
-   (for "j" (range (list (add (subtract "xb"  "xa" ) "1")))
-	(list
-	 (for "k" (range (list (add (subtract "yb" "ya") "1")))
-	      (list
-	       (call "pixel" (list (add "xa" "j") (add "ya" "k") "color"))))))))
-
-
-(def "erase_square"
-    (list "ya" "xa" "lx" "ly")
-
-  (list
-  (assign "xa" (add "xa" "1"))
-  (assign "ya" (add "ya" "1"))
-  (assign "xb" (add "xa" "lx"))
-  (assign "yb" (add "ya" "ly"))
-
-   (for "j" (range (list (add (subtract "xb"  "xa" ) "1")))
-	(list
-	 (for "k" (range (list (add (subtract "yb" "ya") "1")))
-	      (list
-	       (call "erase_pixel" (list (add "xa" "j") (add "ya" "k")))))))))
-
-
-
-
-(def "sprite"
-    (list "x" "y" "the_sprite")
-  (list
-   (for "i" "the_sprite"
-	(list
-
-	  (call "square" (list (add "x" (access "i" "0")) (add "y" (access "i" "1")) (access "i" "2") (access "i" "3") (access "i" "4") ))
-	 )
-	)
-   )
-  )
-
-
-
-(assign "man" (array
-		    (list
-
-		    (array (list "0" "1" "0" "0" "blue"))
-
-		    (array (list "0" "3" "0" "0" "blue"))
-
-		    (array (list "1" "2" "0" "0" "blue"))
-
-		    (array (list "2" "3" "0" "0" "blue"))
-
-		    (array (list "2" "1" "0" "0" "blue"))
-
-		    (array (list "1" "1" "0" "0" "blue"))
-
-		    (array (list "1" "0" "0" "0" "blue"))
-		    
-
-		    )
-		    
-
-		    ))
-
-(assign "x" (array
-		    (list
-
-		    (array (list "0" "0" "0" "0" "blue"))
-
-		    (array (list "0" "2" "0" "0" "blue"))
-
-		    (array (list "1" "1" "0" "0" "blue"))
-
-		    (array (list "2" "2" "0" "0" "blue"))
-
-		    (array (list "2" "0" "0" "0" "blue"))
-
-		    )
-		    
-
-		    )
-	)
-
-   
-;   (call "pixel" (list "row" "col" "blue"))
-;   (call "pixel" (list (add "row" "1") (add "col" "1") "blue"))
-;
-;   (call "pixel" (list (add "row" "0") (add "col" "2") "blue"))
-;
-;      (call "pixel" (list (add "row" "1") (add "col" "1") "blue"))
-;
-;      (call "pixel" (list (add "row" "2") (add "col" "2") "blue"))
-;
-;         (call "pixel" (list (add "row" "2") (add "col" "0") "blue"))
-
-
-
-
-
-
-(def "erase_sprite"
-    (list "row" "col" "sprite")
-  (list
-
-   (for "i" "sprite"
-
-	(list
-
-
-	 (call "erase_square" (list (add "row "(access "i" "0")) (add "col" (access "i" "1")) (access "i" "2") (access "i" "3")))
-
-
-	 )
-
-   
-   )))
-
-
-(assign "sprite_foo" "x")
+	   (curry (list "row_of_blues" "for" "_" "in" (range (list "screen_height")))))))
+		 
 
 
 (def "main"
@@ -991,11 +730,6 @@
 
   
 
-  (call "square" (list "15" "20" "0" "12" "blue"))
-  (call "square" (list "28" "20" "8" "0" "blue"))
-  (call "square" (list "15" "28" "0" "12" "blue" ))
-
-
 ;  (call "sprite"  (list "1" "1" "sprite_foo"))
 ;  (call "erase_sprite" (list "1" "1;" "sprite_foo"))
 ;  (call (dot "time" "sleep") (list "10"))
@@ -1003,7 +737,8 @@
   (assign "positionx" "0")
   (assign "positiony" "0")
 
-  (call "sprite" (list "positionx" "positiony" "sprite_foo"))
+					;  (call "sprite" (list "positionx" "positiony" "sprite_foo"))
+  (call "draw_screen" (list ""))
 
 
   (assign "continue2" "True")
@@ -1039,32 +774,301 @@
      (call (dot "time" "sleep") (list "0.01"))
      ))
 
-	   
-  
-
-
-  (call "erase_square" (list "15" "20" "0" "12"))
-  (call "erase_square" (list "28" "20" "8" "0"))
-  (call "erase_square" (list "15" "28" "0" "12"))
-
-
-
-
-
-    
-
 					;restore the terminal: move the cursor to a safe spot and show it
   (call "restore_terminal" (list ""))
-
-  (pif (pand (pnot (equal "old_term_settings" none)) (pnot (equal "fd" none)))
-       (list
-       (call "restore_terminal_mode" (list "old_term_settings" "fd"))))
-  (call (dot "sys" "exit") (list "0"))
-
   (pass)
 
   )
 )
+
+
+(def "setup_terminal"
+    (list "")
+  (list
+   
+					;hide cursor
+   (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}?25l")))
+
+					;clear screen
+   (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}2J")))
+
+   ;;move cursor to home
+   (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}H")))
+   (call (dot (dot "sys" "stdout") "flush") (list ""))))
+
+(def "set_terminal_raw_mode"
+    (list "")
+  (list
+   (global (intersperse (list "_original_terminal_settings" "_fd")))
+
+   (assign "_fd" (call (dot (dot "sys" "stdin" ) "fileno") (list "")))
+
+   (assign "_original_terminal_settings" (call (dot "termios" "tcgetattr") (list "_fd")))
+
+   (assign "new_settings" (call (dot "termios" "tcgetattr") (list "_fd")))
+
+   (assign (access "new_settings" "3") (set-intersection (access "new_settings" "3") (tilda (group (set-union (dot "termios" "ICANON") (dot "termios" "ECHO"))))))
+
+   (assign (access (access "new_settings" "6") (dot "termios" "VMIN")) "0")
+   (assign (access (access "new_settings" "6") (dot "termios" "VTIME")) "0")
+
+   (call (dot "termios" "tcsetattr") (list "_fd" (dot "termios" "TCSANOW") "new_settings"))))
+
+
+
+
+(def "restore_terminal_mode"
+    (list "")
+	  (list
+	  (global (intersperse (list "_original_terminal_settings" "_fd")))
+	  (pif (pand (pnot (equal "_fd" none)) (pnot (equal "_original_terminal_settings" none)))
+	       (list
+		(call (dot "termios" "tcsetattr") (list "_fd" (dot "termios" "TCSADRAIN")
+							"_original_terminal_settings"))))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+(def "restore_terminal"
+    (list (assign "final_row" none) (assign "final_col" none))
+
+  (list
+
+   (pif (pand (pnot (equal "final_row" none) ) (pnot (equal "final_col" none)))
+	(list
+	 (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}{final_row};{final_col}H")))
+	 )
+	)
+   (pelse
+    (list
+     (assign "foo" (multiply "2" (dot "os" "linesep")))
+     (call (dot (dot "sys" "stdout") "write") (list (fstring "{foo}")))))
+
+
+					;show cursor
+   (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}?25h")))
+   (call (dot (dot "sys" "stdout") "flush") (list ""))
+     
+   )
+  )
+
+
+
+(def "get_char_non_blocking"
+    (list "")
+  (list
+
+    (assign "char" none)
+    (pif (equal
+	  (call (dot "select" "select")
+		(list
+		 (array (list 
+			 (dot "sys" "stdin")))
+			(array (list ""))
+			(array (list ""))
+			 "0"))
+	  (group
+	   (intersperse
+	    (list
+	    (array
+	     (list
+	      (dot
+	       "sys"
+	       "stdin"
+	       )))
+	    (array (list ""))
+	    (array (list ""))))))
+	 
+	 (list
+	  (assign "char" (call (dot (dot "sys" "stdin") "read")  (list "1")))))
+
+  (return (list "char"))))
+
+    
+   
+
+(def "pixels"
+    (list "row" "col" "top_color" "bottom_color")
+  (list
+   (assign "set_top_color" (fstring "{csi}{top_color}m"))
+   (assign "blah" (call "str" (list (add "10" (call "int" (list "bottom_color"))))))
+   (assign "set_bottom_color" (fstring "{csi}{blah}m"))
+   (assign "cursor_position" (fstring "{csi}{row};{col}H"))
+
+   (call (dot (dot "sys" "stdout") "write") (list (fstring "{cursor_position}{set_top_color}{set_bottom_color}{block_char}{sgr_reset}")))
+   (call (dot (dot "sys" "stdout") "flush") (list ""))
+   )
+  )
+
+
+   
+(def "draw_screen"
+    (list "")
+  (list
+   (for "i" (range (list (integer-divide "screen_height" "2")))
+	(list
+	 (for "j" (range (list "screen_width"))
+	      (list
+	       (call "pixels" (list (add "i" "1") (add "j" "1") (access (access "screen" (add "1" (group (multiply "i" "2")))) "j")
+				    (access (access "screen" (add "2" (group (multiply "i" "2")))) "j")))
+	 )
+	)
+   )
+	)
+   )
+  )
+				    
+						    
+		     
+	       
+   
+
+
+
+(def "erase_pixels"
+    (list "row" "col")
+  (list
+   (assign "cursor_pos" (fstring "{csi}{row};{col}H"))
+
+   (assign "sgr_default_fg_bg" (fstring "{csi}39;49m"))
+
+   (call (dot (dot "sys" "stdout") "write") (list (fstring "{cursor_pos}{sgr_default_fg_bg} ")))
+   (call (dot (dot "sys" "stdout") "flush") (list ""))
+   )
+  )
+
+
+
+
+
+
+
+
+(def "sprite"
+    (list "x" "y" "the_sprite")
+  (list
+   (for "i" "the_sprite"
+	(list
+
+	  (call "pixels" (list (add "x" (access "i" "0")) (add "y" (access "i" "1")) (access "i" "2") (access "i" "3")))
+	 )
+	)
+   )
+  )
+
+
+
+(assign "man" (array
+		    (list
+
+		    (array (list "0" "1" "blue" "blue"))
+
+		    (array (list "0" "3" "blue" "blue"))
+
+		    (array (list "1" "2" "blue" "blue"))
+
+		    (array (list "2" "3" "blue" "blue"))
+
+		    (array (list "2" "1" "blue" "blue"))
+
+		    (array (list "1" "1" "blue" "blue"))
+
+		    (array (list "1" "0" "blue" "blue"))
+		    
+
+		    )
+		    
+
+		    ))
+
+(assign "wizard"
+	(array (list
+;		(array (list "2" "0" "blue" "blue"))
+		(array (list "0" "0" "blue" "blue"))
+		(array (list "3" "1" "blue" "blue"))
+		(array (list "0" "2" "blue" "blue"))
+;		(array (list "6" "2" "blue" "blue"))
+;		(array (list "8" "3" "blue" "blue"))
+;		(array (list "0" "4" "blue" "blue"))
+		)))
+
+
+
+(assign "x" (array
+		    (list
+
+		    (array (list "0" "0" "blue" "blue"))
+
+		    (array (list "0" "2" "blue" "blue"))
+
+		    (array (list "1" "1" "blue" "blue"))
+
+		    (array (list "2" "2" "blue" "blue"))
+
+		    (array (list "2" "0" "blue" "blue"))
+
+		    )
+		    
+
+		    )
+	)
+
+(assign "diagonal_line"
+	(array
+	 (list
+	  (array (list "0" "0" "blue" "blue"))
+	  (array (list "1" "1" "black" "blue"))
+	  (array (list "2" "2" "blue" "blue"))
+	  (array (list "3" "3" "blue" "blue"))
+	  (array (list "4" "4" "blue" "blue"))
+	  (array (list "5" "5" "blue" "blue"))
+	  )))
+
+   
+;   (call "pixels" (list "row" "col" "blue"))
+;   (call "pixels" (list (add "row" "1") (add "col" "1") "blue"))
+;
+;   (call "pixels" (list (add "row" "0") (add "col" "2") "blue"))
+;
+;      (call "pixels" (list (add "row" "1") (add "col" "1") "blue"))
+;
+;      (call "pixels" (list (add "row" "2") (add "col" "2") "blue"))
+;
+;         (call "pixels" (list (add "row" "2") (add "col" "0") "blue"))
+
+
+
+
+
+
+(def "erase_sprite"
+    (list "row" "col" "sprite")
+  (list
+
+   (for "i" "sprite"
+
+	(list
+
+
+	 (call "erase_pixels" (list (add "row" (access "i" "0")) (add "col" (access "i" "1")) ))
+
+
+	 )
+
+   
+   )))
+
+
+(assign "sprite_foo" "diagonal_line")
 
 (pif (equal "__name__" (string "__main__"))
      (list
@@ -1073,7 +1077,7 @@
        (call "main" (list ""))
        ))
      (except "KeyboardInterrupt"
-	     (list (print (list (string "\\nExiting"))))
+	     (list (print (list (string "Exiting"))))
 	     )
      (finally
       (list
@@ -1081,3 +1085,4 @@
        (call "restore_terminal_mode" (list ""))
        (call (dot "sys" "exit") (list "0")))))
 )
+
