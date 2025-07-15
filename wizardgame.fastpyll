@@ -708,15 +708,42 @@
 (assign "screen_width" "160")
 (assign "screen_height" "80")
 
-(assign "row_of_blues" (array (list (curry (list "blue" "for" "_" "in" (range (list "screen_width")))))))
-
 
 (assign "screen"
 	(array
 	 (list
-	   (curry (list "row_of_blues" "for" "_" "in" (range (list "screen_height")))))))
+	   "")))
 		 
 
+;for r in range(screen_height * 2): # Iterate for double height
+;    row_data = [] # <---- CHANGE: Create a NEW list for each row
+;    for c in range(screen_width):
+;        # Create a simple checkerboard pattern (or just fill with blue)
+;        if (r + c) % 2 == 0:
+;n            row_data.append(white)
+;        else:
+;            row_data.append(black)
+;screen.append(row_data)
+
+
+(for
+ "r"
+ (range (list (multiply "screen_height" "2")))
+ (list
+  (assign "row_data" (array (list "")))
+  (for
+   "c"
+   (range (list "screen_width"))
+	  (list
+	   (pif (equal "0" (modulo (add "r" "c") "2"))
+		(list
+		 (call (dot "row_data" "append") (list "blue"))))
+	   (pelse
+	    (list
+	     (call (dot "row_data" "append") (list "blue"))
+	     ))))
+  (call (dot "screen" "append") (list "row_data"))))
+	  
 
 (def "main"
     (list "")
@@ -728,17 +755,17 @@
   ;;drawa  blue square at row 20 column 20
 
 
+
+
+  (call "pixel" (list "20" "20" "black"))
+
+    (call "draw_screen" (list ""))
   
-
-;  (call "sprite"  (list "1" "1" "sprite_foo"))
-;  (call "erase_sprite" (list "1" "1;" "sprite_foo"))
-;  (call (dot "time" "sleep") (list "10"))
-
   (assign "positionx" "0")
   (assign "positiony" "0")
 
-					;  (call "sprite" (list "positionx" "positiony" "sprite_foo"))
-  (call "draw_screen" (list ""))
+
+
 
 
   (assign "continue2" "True")
@@ -910,6 +937,8 @@
   )
 
 
+
+
    
 (def "draw_screen"
     (list "")
@@ -934,22 +963,15 @@
 
 
 
-(def "erase_pixels"
-    (list "row" "col")
+
+
+
+(def "pixel"
+
+    (list "row" "col" "color")
   (list
-   (assign "cursor_pos" (fstring "{csi}{row};{col}H"))
 
-   (assign "sgr_default_fg_bg" (fstring "{csi}39;49m"))
-
-   (call (dot (dot "sys" "stdout") "write") (list (fstring "{cursor_pos}{sgr_default_fg_bg} ")))
-   (call (dot (dot "sys" "stdout") "flush") (list ""))
-   )
-  )
-
-
-
-
-
+	  (assign (access (access "screen" "row") "col") "color")))
 
 
 
