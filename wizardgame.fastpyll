@@ -678,541 +678,234 @@
 ;;
 
 
-
 (import "sys")
 (import "os")
 (import "time")
 (import "termios")
 (import "tty")
 (import "select")
-
-
-
 (assign "esc" (string "\\x1b"))
-
-
 (assign "csi" (fstring "{esc}["))
-
 (assign "sgr_reset" (fstring "{csi}0m"))
-
 (assign "block_char" (string "▀"))
-
 (assign "blue" (string "34"))
 (assign "black" (string "30"))
 (assign "white" (string "37"))
-
 (assign "_original_terminal_settings" none)
 (assign "_fd" none)
-
-
 (assign "screen_width" "320")
 (assign "screen_height" "162")
-
-
-
-
-(assign "background_screen"
-	(array
-	 (list
-	   "")))
-
-(assign "foreground_screen"
-	(array
-	 (list
-	   "")))
-
-
-
-(assign "screen"
-	(array
-	 (list
-	  "")))
-
-
-(assign "old_screen"
-	(array
-	 (list
-	   "")))
-		 
-(for
- "r"
- (range (list "screen_height"))
- (list
-  (assign "row_data" (array (list "")))
-  (for
-   "c"
-   (range (list "screen_width"))
-	  (list
-		 (call (dot "row_data" "append") (list "black"))))
-
-  (call (dot "background_screen" "append") (list "row_data"))))
-
-
-
-(for
- "r"
- (range (list "screen_height"))
- (list
-  (assign "row_data" (array (list "")))
-  (for
-   "c"
-   (range (list "screen_width"))
-	  (list
-		 (call (dot "row_data" "append") (list "black"))))
-
-  (call (dot "old_screen" "append") (list "row_data"))))
-
-
-
-
-(for
- "r"
- (range (list "screen_height"))
- (list
-  (assign "row_data" (array (list "")))
-  (for
-   "c"
-   (range (list "screen_width"))
-	  (list
-		 (call (dot "row_data" "append") (list "-1"))))
-
-  (call (dot "foreground_screen" "append") (list "row_data"))))
-
-
-(for
- "r"
- (range (list "screen_height"))
- (list
-  (assign "row_data" (array (list "")))
-  (for
-   "c"
-   (range (list "screen_width"))
-	  (list
-		 (call (dot "row_data" "append") (list "black"))))
-
-  (call (dot "screen" "append") (list "row_data"))))
-
-
-
-
-(def "main"
-    (list "")
-  (list
-   (call "set_terminal_raw_mode" (list ""))
-   
-  (call "setup_terminal" (list ""))
-
-
-
-  
-
-  
-
- (call "foreground_sprite" (list "0" "0" "sprite_foo"))
-
-
-
-
-
-
-
-  
-
-
-  
-  (assign "positionx" "0")
-  (assign "positiony" "0")
-
-
-
-
-
-  (assign "continue2" true)
-
-  (while "continue2"
-	 (list
-	  (for "i" (range (list "100"))
-	       (list
-		(assign "key" (call "get_char_non_blocking" (list "")))
-		(pif (equal "key" "\"q\"")
-		     (list
-		      (assign "continue2" "False")))
-
-		(pelif (equal "key" (string "w"))
-		       (list
-			(call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))
-			(assign "positiony" (subtract "positiony" "1"))
-			(call "foreground_sprite" (list "positionx" "positiony" "sprite_foo"))))
-
-		(pelif (equal "key" (string "a"))
-		       (list
-			(call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))
-			(assign "positionx" (subtract "positionx" "1"))
-			(call "foreground_sprite" (list "positionx" "positiony" "sprite_foo"))))
-		(pelif (equal "key" (string "s"))
-		       (list
-			(call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))
-			(assign "positiony" (add "positiony" "1"))
-			(call "foreground_sprite" (list "positionx" "positiony" "sprite_foo"))))
-		(pelif (equal "key" (string "d"))
-		       (list
-			(call "erase_foreground_sprite" (list "positionx" "positiony" "sprite_foo"))
-			(assign "positionx" (add "positionx" "1"))
-			(call "foreground_sprite" (list "positionx" "positiony" "sprite_foo"))))
-
-		))
-
-	  (call "draw_screen" (list ""))
-	  (call (dot "time" "sleep") (list "0.05"))
-  )
-	 )
-
-
-
-					;restore the terminal: move the cursor to a safe spot and show it
-  (call "restore_terminal" (list ""))
-  (pass)
-
-  )
-)
-
-
-(def "setup_terminal"
-    (list "")
-  (list
-   
-					;hide cursor
-   (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}?25l")))
-
-					;clear screen
-   (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}2J")))
-
-
-   (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}H")))
-   (call (dot (dot "sys" "stdout") "flush") (list ""))))
-
-(def "set_terminal_raw_mode"
-    (list "")
-  (list
-   (global (intersperse (list "_original_terminal_settings" "_fd")))
-
-   (assign "_fd" (call (dot (dot "sys" "stdin" ) "fileno") (list "")))
-
-   (assign "_original_terminal_settings" (call (dot "termios" "tcgetattr") (list "_fd")))
-
-   (assign "new_settings" (call (dot "termios" "tcgetattr") (list "_fd")))
-
-   (assign (access "new_settings" "3") (set-intersection (access "new_settings" "3") (tilda (group (set-union (dot "termios" "ICANON") (dot "termios" "ECHO"))))))
-
-   (assign (access (access "new_settings" "6") (dot "termios" "VMIN")) "0")
-   (assign (access (access "new_settings" "6") (dot "termios" "VTIME")) "0")
-
-   (call (dot "termios" "tcsetattr") (list "_fd" (dot "termios" "TCSANOW") "new_settings"))))
-
-
-
-
-(def "restore_terminal_mode"
-    (list "")
-	  (list
-	  (global (intersperse (list "_original_terminal_settings" "_fd")))
-	  (pif (pand (pnot (equal "_fd" none)) (pnot (equal "_original_terminal_settings" none)))
-	       (list
-		(call (dot "termios" "tcsetattr") (list "_fd" (dot "termios" "TCSADRAIN")
-							"_original_terminal_settings"))))))
-
-
-
-
-
-
-
-
-
-
-
-
-
-(def "restore_terminal"
-    (list (assign "final_row" none) (assign "final_col" none))
-
-  (list
-
-   (pif (pand (pnot (equal "final_row" none) ) (pnot (equal "final_col" none)))
-	(list
-	 (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}{final_row};{final_col}H")))
-	 )
-	)
-   (pelse
-    (list
-     (assign "foo" (multiply "2" (dot "os" "linesep")))
-     (call (dot (dot "sys" "stdout") "write") (list (fstring "{foo}")))))
-
-
-					;show cursor
-   (call (dot (dot "sys" "stdout") "write") (list (fstring "{csi}?25h")))
-   (call (dot (dot "sys" "stdout") "flush") (list ""))
-     
-   )
-  )
-
-
-
-(def "get_char_non_blocking"
-    (list "")
-  (list
-
-    (assign "char" none)
-    (pif (equal
-	  (call (dot "select" "select")
-		(list
-		 (array (list 
-			 (dot "sys" "stdin")))
-			(array (list ""))
-			(array (list ""))
-			 "0"))
-	  (group
-	   (intersperse
-	    (list
-	    (array
-	     (list
-	      (dot
-	       "sys"
-	       "stdin"
-	       )))
-	    (array (list ""))
-	    (array (list ""))))))
-	 
-	 (list
-						  (assign "char" (call (dot (dot "sys" "stdin") "read")  (list "1")))))
-	     	     
-  (return (list "char"))))
-
-
-    
-
-
-
-
-    
-   
-
-(def "pixels"
-    (list "row" "col" "top_color" "bottom_color")
-  (list
-   (assign "row" (add "row" "1"))
-      (assign "col" (add "col" "1"))
-   (assign "set_top_color" (fstring "{csi}{top_color}m"))
-   (assign "blah" (call "str" (list (add "10" (call "int" (list "bottom_color"))))))
-   (assign "set_bottom_color" (fstring "{csi}{blah}m"))
-   (assign "cursor_position" (fstring "{csi}{row};{col}H"))
-
-   (call (dot (dot "sys" "stdout") "write") (list (fstring "{cursor_position}{set_top_color}{set_bottom_color}{block_char}{sgr_reset}")))
-;   (call (dot (dot "sys" "stdout") "flush") (list ""))
-   )
-  )
-
-
-
-
-   
-(def "draw_screen"
-    (list "")
-  (list
-
-
-;;combine the foreground screen with the background screen into the display screen
-
-   (for "r" (range (list "screen_height"))
-	(list
-	 (for "c" (range (list "screen_width"))
-	      (list
-	       (assign (access (access "screen" "r") "c") (access (access "background_screen" "r") "c"))
-	       (pif (not-equal "-1" (access (access "foreground_screen" "r") "c"))
-		    (list
-		     (assign (access (access "screen" "r") "c") (access (access "foreground_screen" "r") "c"))
-		     )
-		    )
-	       )
-	      )
-	 )
-	)
-
-   ;;draw new pixels to the screen
-   (for "r" (range (list (integer-divide "screen_height" "2")))
-	(list
-	 (for "c" (range (list "screen_width"))
-	      (list
-	       (assign "top" (access (access "screen" (multiply "r" "2")) "c"))
-	       (assign "bottom" (access (access "screen" (add "1" (multiply "r" "2"))) "c"))
-	       (assign "last_top" (access (access "old_screen" (multiply "r" "2")) "c"))
-	       (assign "last_bottom" (access (access "old_screen" (add "1" (multiply "r" "2"))) "c"))
-	       (pif (por (not-equal "top" "last_top") (not-equal "bottom" "last_bottom"))
-		    (list
-		     (call "pixels" (list "r" "c" "top" "bottom"))))))))
-
-
-
-   ;;update old screen
-   (for "r" (range (list "screen_height"))
-	(list
-	 (for "c" (range (list "screen_width"))
-	      (list
-
-	       (assign (access (access "old_screen" "r") "c") (access (access "screen" "r") "c") )
-
-	       )
-
-	      )
-
-	 )
-
-	)
-   (call (dot (dot "sys" "stdout") "flush") (list ""))
-	       
-
-	)
-   )
-  
-
-
-
-
-(def "pixel"
-
-    (list "which_screen" "col" "row" "color")
-  (list
-
-   (assign (access (access "which_screen" (add "row" "0")) (add "col" "0")) "color")
-   )
-  )
-
-
-
-(def "sprite"
-    (list "which_screen" "x" "y" "the_sprite")
-  (list
-   (for "i" "the_sprite"
-	(list
-
-	  (call "pixel" (list "which_screen" (add "x" (access "i" "0")) (add "y" (access "i" "1")) (access "i" "2")))
-	 )
-	)
-   )
-  )
-
-
-(def "foreground_sprite"
-    (list "x" "y" "the_sprite")
-  (list
-   (for "i" "the_sprite"
-	(list
-
-	  (call "pixel" (list "foreground_screen" (add "x" (access "i" "0")) (add "y" (access "i" "1")) (access "i" "2")))
-	 )
-	)
-   )
-  )
-
-
-(def "erase_foreground_sprite"
-    (list "x" "y" "the_sprite")
-  (list
-   (for "i" "the_sprite"
-	(list
-
-	  (call "pixel" (list "foreground_screen" (add "x" (access "i" "0")) (add "y" (access "i" "1")) "-1"))
-	 )
-	)
-   )
-  )
-
-
-
-(assign "man" (array
-		    (list
-
-		    (array (list "0" "1" "blue" "blue"))
-
-		    (array (list "0" "3" "blue" "blue"))
-
-		    (array (list "1" "2" "blue" "blue"))
-
-		    (array (list "2" "3" "blue" "blue"))
-
-		    (array (list "2" "1" "blue" "blue"))
-
-		    (array (list "1" "1" "blue" "blue"))
-
-		    (array (list "1" "0" "blue" "blue"))
-		    
-
+(assign "background_screen" (array))
+(assign "foreground_screen" (array))
+(assign "screen" (array))
+(assign "old_screen" (array))
+(codeblock (for (in "r" (range "screen_height")))
+	   (assign "row_data" (array))
+	   (codeblock (for (in "c" (range "screen_width")))
+		      (call (d "row_data" "append") "black"))
+	   (call (d "background_screen" "append") "row_data")
+	   )
+	   
+(codeblock (for (in "r" (range "screen_height")))
+	   (assign "row_data" (array))
+	   (codeblock (for (in "c" (range "screen_width")))
+		      (call (d "row_data" "append") "black"))
+	   (call (d "old_screen" "append") "row_data"))
+(codeblock (for (in "r" (range "screen_height")))
+	   (assign "row_data" (array))
+	   (codeblock (for (in "c" (range "screen_width")))
+		      (call (d "row_data" "append") "-1"))
+	   (call (d "foreground_screen" "append") "row_data"))
+(codeblock (for (in "r" (range "screen_height")))
+	   (assign "row_data" (array))
+	   (codeblock (for (in "c" (range "screen_width")))
+		      (call (d "row_data" "append") "black"))
+	   (call (d "screen" "append") "row_data"))
+(codeblock (def "main")
+	   (call "set_terminal_raw_mode")
+	   (call "setup_terminal")
+	   
+	   (call "foreground_sprite" "0" "0" "sprite_foo")
+	   
+	   (assign "positionx" "0")
+	   (assign "positiony" "0")
+	   (assign "continue2" "True")
+
+	   (codeblock (while "continue2")
+			(codeblock (for (in "i" (range "100")))
+				   (assign "key" (call "get_char_non_blocking"))
+				   (codeblock (pif (equal "key" (string "q")))
+					      (assign "continue2" false))
+				   (codeblock (pelif (equal "key" (string "w")))
+					  (call "erase_foreground_sprite" "positionx" "positiony" "sprite_foo")
+					  (assign "positiony" (subtract "positiony" "1"))
+					  (call "foreground_sprite" "positionx" "positiony" "sprite_foo"))
+				   (codeblock (pelif (equal "key" (string "a")))
+					  (call "erase_foreground_sprite" "positionx" "positiony" "sprite_foo")
+					  (assign "positionx" (subtract "positionx" "1"))
+					  (call "foreground_sprite" "positionx" "positiony" "sprite_foo"))
+				   (codeblock (pelif (equal "key" (string "s")))
+					  (call "erase_foreground_sprite" "positionx" "positiony" "sprite_foo")
+					  (assign "positiony" (add "positiony" "1"))
+					  (call "foreground_sprite" "positionx" "positiony" "sprite_foo"))
+				   (codeblock (pelif (equal "key" (string "d")))
+					  (call "erase_foreground_sprite" "positionx" "positiony" "sprite_foo")
+					  (assign "positionx" (add "positionx" "1"))
+					  (call "foreground_sprite" "positionx" "positiony" "sprite_foo"))
+				   )
+			(call "draw_screen")
+			(call (d "time" "sleep") "0.05")
+
+			)
+	   (call "restore_terminal")
+	   "pass"
+			
+	   )
+
+(codeblock (def "setup_terminal")
+	   (call (d (d "sys" "stdout") "write") (fstring "{csi}?25l"))
+	   (call (d (d "sys" "stdout") "write") (fstring "{csi}2J"))
+
+	   (call (d (d "sys" "stdout") "write") (fstring "{csi}H"))
+	   (call (d (d "sys" "stdout") "flush"))
+	   )
+
+(codeblock (def "set_terminal_raw_mode")
+	   (global "_original_terminal_settings" "_fd")
+	   (assign "_fd" (call (d (d "sys" "stdin") "fileno")))
+	   (assign "_original_terminal_settings" (call (d "termios" "tcgetattr") "_fd"))
+	   (assign "new_settings" (call (d "termios" "tcgetattr") "_fd"))
+	   (assign (a "new_settings" "3") (set_intersection (a "new_settings" "3") (tilda (set_union (d "termios" "ICANON") (d "termios" "ECHO")))))
+	   (assign (a (a "new_settings" "6") (d "termios" "VMIN")) "0")
+	   (assign (a (a "new_settings" "6") (d "termios" "VTIME")) "0")
+	   (call (d "termios" "tcsetattr") "_fd" (d "termios" "TCSANOW") "new_settings")
+	   )
+(codeblock (def "restore_terminal_mode")
+	   (global "_original_terminal_settings" "_fd")
+	   (codeblock (pif (pand (pnot (equal "_fd" none)) (pnot (equal "_original_terminal_settings" none))))
+			   (call (d "termios" "tcsetattr") "_fd" (d "termios" "TCSADRAIN") "_original_terminal_settings")))
+(codeblock (def "restore_terminal" (assign "final_row" none) (assign "final_col" none))
+	   (codeblock (pif (pand (pnot (equal "final_row" none)) (pnot (equal "final_col" none))))
+		(call (d (d "sys" "stdout") "write") (fstring "{csi}{final_row};{final_col}H")))
+	   (codeblock (pelse)
+		      (assign "foo" (multiply "2" (d "os" "linesep")))
+		      (call (d (d "sys" "stdout") "write") (fstring "{foo}")))
+	   (call (d (d "sys" "stdout") "write") (fstring "{csi}?25h"))
+	   (call (d (d "sys" "stdout") "flush"))
+	   )
+(codeblock (def "get_char_non_blocking")
+	   (assign "char" none)
+	   (codeblock (pif (equal (call (d "select" "select") (arguments (array (d "sys" "stdin")) (array) (array) "0"))
+				  (arguments (array (d "sys" "stdin")) (array) (array))))
+			   (assign "char" (call (d (d "sys" "stdin") "read") "1")))
+	   (return "char")
+	   )
+(codeblock (def "pixels" "row" "col" "top_color" "bottom_color")
+	   (assign "row" (add "row" "1"))
+	   (assign "col" (add "col" "1"))
+	   (assign "set_top_color" (fstring "{csi}{top_color}m"))
+	   (assign "blah" (call "str" (add "10" (call "int" "bottom_color"))))
+	   (assign "set_bottom_color" (fstring "{csi}{blah}m"))
+	   (assign "cursor_position" (fstring "{csi}{row};{col}H"))
+	   (call (d (d "sys" "stdout") "write") (fstring "{cursor_position}{set_top_color}{set_bottom_color}{block_char}{sgr_reset}"))
+	   )
+(codeblock (def "draw_screen")
+    ;;combine the foreground screen with the background screen into the display window
+    (codeblock (for (in "r" (range "screen_height")))
+		    (codeblock (for (in "c" (range "screen_width")))
+			       (assign (a (a "screen" "r") "c") (a (a "background_screen" "r") "c"))
+			       (codeblock (pif (not_equal "-1" (a (a "foreground_screen" "r") "c")))
+					  (assign (a (a "screen" "r") "c") (a (a "foreground_screen" "r") "c")))
+			       )
 		    )
 		    
 
-		    ))
-
-(assign "wizard"
-	(array (list
-;		(array (list "2" "0" "blue" "blue"))
-		(array (list "0" "0" "blue" "blue"))
-		(array (list "3" "1" "blue" "blue"))
-		(array (list "0" "2" "blue" "blue"))
-;		(array (list "6" "2" "blue" "blue"))
-;		(array (list "8" "3" "blue" "blue"))
-;		(array (list "0" "4" "blue" "blue"))
-		)))
+  ;;draw new pixels to the screen
+  (codeblock (for (in "r" (range (integer-divide "screen_height" "2"))))
+	     (codeblock (for (in "c" (range "screen_width")))
+			(assign "top" (a (a "screen" (multiply "r" "2")) "c"))
+			(assign "bottom" (a (a "screen" (add "1" (multiply "r" "2"))) "c"))
+			(assign "last_top" (a (a "old_screen" (multiply "r" "2")) "c"))
+			(assign "last_bottom" (a (a "old_screen" (add "1" (multiply "r" "2"))) "c"))
+			(codeblock (pif (por (not_equal "top" "last_top") (not_equal "bottom" "last_bottom")))
+				   (call "pixels" "r" "c" "top" "bottom"))))
 
 
 
-(assign "x" (array
-		    (list
+  ;;update old screen
+  (codeblock (for (in "r" (range "screen_height")))
+	     (codeblock (for (in "c" (range "screen_width")))
+			(assign (a (a "old_screen" "r") "c") (a (a "screen" "r") "c"))))
 
-		    (array (list "0" "0" "blue"))
 
-		    (array (list "0" "2" "blue"))
 
-		    (array (list "1" "1" "blue"))
+  (call (d (d "sys" "stdout") "flush"))
+  )
 
-		    (array (list "2" "2" "blue"))
 
-		    (array (list "2" "0" "blue"))
+(codeblock (def "pixel" "which_screen" "col" "row" "color")
+	   (assign (a (a "which_screen" (add "row" "0")) (add "col" "0")) "color"))
 
-		    )
-		    
 
-		    )
-	)
+(codeblock (def "sprite" "which_screen" "x" "y" "the_sprite")
+	  (codeblock (for (in "i" "the_sprite"))
+		     (call "pixel" "which_screen" (add "x" (a "i" "0")) (add "y" (a "i" "1")) (a "i" "2"))))
+
+
+
+(codeblock (def "foreground_sprite" "x" "y" "the_sprite")
+	   (codeblock (for (in "i" "the_sprite"))
+		      (call "pixel" "foreground_screen" (add "x" (a "i" "0")) (add "y" (a "i" "1")) (a "i" "2"))))
+
+
+(codeblock (def "erase_foreground_sprite" "x" "y" "the_sprite")
+	   (codeblock (for (in "i" "the_sprite"))
+		      (call "pixel" "foreground_screen" (add "x" (a "i" "0")) (add "y" (a "i" "1")) "-1")
+		      )
+	   )
+
+
+(assign "man" (array (array "0" "1" "blue")
+		     (array "0" "3" "blue")
+		     (array "1" "2" "blue")
+		     (array "2" "3" "blue")
+		     (array "2" "1" "blue")
+		     (array "1" "1" "blue")
+		     (array "1" "0" "blue")))
+
+
+(assign "wizard" (array))
+
+
+(assign "x" (array (array "0" "0" "blue")
+		   (array "0" "2" "blue")
+		   (array "1" "1" "blue")
+		   (array "2" "2" "blue")
+		   (array "2" "0" "blue")))
+
 
 (assign "diagonal_line"
 	(array
-	 (list
-	  (array (list "0" "0" "blue" ))
-	  (array (list "1" "1" "blue"))
-	  (array (list "2" "2" "blue"))
-	  (array (list "3" "3" "blue"))
-	  (array (list "4" "4" "blue"))
-	  (array (list "5" "5" "blue"))
-	  )))
+	 (array "0" "0" "blue")
+	 (array "1" "1" "blue")
+	 (array "2" "2" "blue")
+	 (array "3" "3" "blue")
+	 (array "4" "4" "blue")
+	 (array "5" "5" "blue")
+	 ))
+
+
+(assign "sprite_foo" "man")
 
 
 
-
-(assign "sprite_foo" "diagonal_line")
-
-(pif (equal "__name__" (string "__main__"))
-     (list
-     (try
-      (list
-       (call "main" (list ""))
-       ))
-     (except "KeyboardInterrupt"
-	     (list (print (list (string "Exiting"))))
-	     )
-     (finally
-      (list
-       (call "restore_terminal" (list ""))
-       (call "restore_terminal_mode" (list ""))
-       (call (dot "sys" "exit") (list "0")))))
-)
+(codeblock (pif (equal "__name__" (string "__main__")))
+     (codeblock "try"
+		(call "main"))
+     (codeblock (except "KeyboardInterrupt")
+		(print (string "Exiting")))
+     (codeblock (finally)
+		(call "restore_terminal")
+		(call "restore_terminal_mode")
+		(call (d "sys" "exit") "0")))
 
