@@ -688,11 +688,15 @@
 (assign "csi" (fstring "{esc}["))
 (assign "sgr_reset" (fstring "{csi}0m"))
 (assign "block_char" (string "▀"))
-(assign "blue" (string "34"))
-(assign "black" (string "30"))
-(assign "white" (string "37"))
+
+(assign "transparent" (array "-1" "-1" "-1"))
+(assign "black" (array "0" "0" "0"))
+(assign "blue" (array "0" "0" "255"))
+(assign "wizard_blue" (array "33" "47" "73"))
+
 (assign "_original_terminal_settings" none)
 (assign "_fd" none)
+
 (assign "screen_width" "320")
 (assign "screen_height" "162")
 (assign "background_screen" (array))
@@ -711,10 +715,14 @@
 	   (codeblock (for (in "c" (range "screen_width")))
 		      (call (d "row_data" "append") "black"))
 	   (call (d "old_screen" "append") "row_data"))
+
+
 (codeblock (for (in "r" (range "screen_height")))
 	   (assign "row_data" (array))
 	   (codeblock (for (in "c" (range "screen_width")))
-		      (call (d "row_data" "append") "-1"))
+		      (call (d "row_data" "append") "transparent"))
+
+	   
 	   (call (d "foreground_screen" "append") "row_data"))
 (codeblock (for (in "r" (range "screen_height")))
 	   (assign "row_data" (array))
@@ -770,6 +778,16 @@
 	   (call (d (d "sys" "stdout") "flush"))
 	   )
 
+
+
+
+
+
+
+
+
+
+
 (codeblock (def "set_terminal_raw_mode")
 	   (global "_original_terminal_settings" "_fd")
 	   (assign "_fd" (call (d (d "sys" "stdin") "fileno")))
@@ -780,19 +798,50 @@
 	   (assign (a (a "new_settings" "6") (d "termios" "VTIME")) "0")
 	   (call (d "termios" "tcsetattr") "_fd" (d "termios" "TCSANOW") "new_settings")
 	   )
+
+
+
+
+
+
+
 (codeblock (def "restore_terminal_mode")
 	   (global "_original_terminal_settings" "_fd")
 	   (codeblock (pif (pand (pnot (equal "_fd" none)) (pnot (equal "_original_terminal_settings" none))))
-			   (call (d "termios" "tcsetattr") "_fd" (d "termios" "TCSADRAIN") "_original_terminal_settings")))
+		      
+		      (call (d "termios" "tcsetattr") "_fd" (d "termios" "TCSADRAIN") "_original_terminal_settings")))
+
+
+
+
+
+
+
+
+
+
+
 (codeblock (def "restore_terminal" (assign "final_row" none) (assign "final_col" none))
 	   (codeblock (pif (pand (pnot (equal "final_row" none)) (pnot (equal "final_col" none))))
-		(call (d (d "sys" "stdout") "write") (fstring "{csi}{final_row};{final_col}H")))
+		      (call (d (d "sys" "stdout") "write") (fstring "{csi}{final_row};{final_col}H")))
+	   
 	   (codeblock (pelse)
 		      (assign "foo" (multiply "2" (d "os" "linesep")))
 		      (call (d (d "sys" "stdout") "write") (fstring "{foo}")))
 	   (call (d (d "sys" "stdout") "write") (fstring "{csi}?25h"))
 	   (call (d (d "sys" "stdout") "flush"))
 	   )
+
+
+
+
+
+
+
+
+
+
+
 (codeblock (def "get_char_non_blocking")
 	   (assign "char" none)
 	   (codeblock (pif (equal (call (d "select" "select") (arguments (array (d "sys" "stdin")) (array) (array) "0"))
@@ -800,21 +849,31 @@
 			   (assign "char" (call (d (d "sys" "stdin") "read") "1")))
 	   (return "char")
 	   )
-(codeblock (def "pixels" "row" "col" "top_color" "bottom_color")
+
+
+
+
+
+(codeblock (def "pixels" "col" "row" "top_color" "bottom_color")
 	   (assign "row" (add "row" "1"))
 	   (assign "col" (add "col" "1"))
-	   (assign "set_top_color" (fstring "{csi}{top_color}m"))
-	   (assign "blah" (call "str" (add "10" (call "int" "bottom_color"))))
-	   (assign "set_bottom_color" (fstring "{csi}{blah}m"))
+	   (assign "set_top_color" (fstring "{csi}38;2;{top_color[0]};{top_color[1]};{top_color[2]}m"))
+	   (assign "set_bottom_color" (fstring "{csi}48;2;{bottom_color[0]};{bottom_color[1]};{bottom_color[2]}m"))
 	   (assign "cursor_position" (fstring "{csi}{row};{col}H"))
 	   (call (d (d "sys" "stdout") "write") (fstring "{cursor_position}{set_top_color}{set_bottom_color}{block_char}{sgr_reset}"))
 	   )
+
+
+
+
+
+
 (codeblock (def "draw_screen")
     ;;combine the foreground screen with the background screen into the display window
     (codeblock (for (in "r" (range "screen_height")))
 		    (codeblock (for (in "c" (range "screen_width")))
 			       (assign (a (a "screen" "r") "c") (a (a "background_screen" "r") "c"))
-			       (codeblock (pif (not_equal "-1" (a (a "foreground_screen" "r") "c")))
+			       (codeblock (pif (por (not_equal "-1" (a (a (a "foreground_screen" "r") "c") "0")) (por (not_equal "-1" (a (a (a "foreground_screen" "r") "c") "1")) (not_equal "-1" (a (a (a "foreground_screen" "r") "c") "2")))))
 					  (assign (a (a "screen" "r") "c") (a (a "foreground_screen" "r") "c")))
 			       )
 		    )
@@ -827,8 +886,8 @@
 			(assign "bottom" (a (a "screen" (add "1" (multiply "r" "2"))) "c"))
 			(assign "last_top" (a (a "old_screen" (multiply "r" "2")) "c"))
 			(assign "last_bottom" (a (a "old_screen" (add "1" (multiply "r" "2"))) "c"))
-			(codeblock (pif (por (not_equal "top" "last_top") (not_equal "bottom" "last_bottom")))
-				   (call "pixels" "r" "c" "top" "bottom"))))
+			(codeblock (pif (por (not_equal (a "top" "0") (a "last_top" "0")) (por (not_equal (a "top" "1") (a "last_top" "1")) (por (not_equal (a "top" "2")(a "last_top" "2"))  (por (not_equal (a "bottom" "0") (a "last_bottom" "0")) (por (not_equal (a "bottom" "1")  (a "last_bottom" "1")) (not_equal (a "bottom" "2") (a "last_bottom" "2"))))))))
+				   (call "pixels" "c" "r" "top" "bottom"))))
 
 
 
@@ -860,38 +919,38 @@
 
 (codeblock (def "erase_foreground_sprite" "x" "y" "the_sprite")
 	   (codeblock (for (in "i" "the_sprite"))
-		      (call "pixel" "foreground_screen" (add "x" (a "i" "0")) (add "y" (a "i" "1")) "-1")
+		      (call "pixel" "foreground_screen" (add "x" (a "i" "0")) (add "y" (a "i" "1")) "transparent")
 		      )
 	   )
 
 
-(assign "man" (array (array "0" "1" "blue")
-		     (array "0" "3" "blue")
-		     (array "1" "2" "blue")
-		     (array "2" "3" "blue")
-		     (array "2" "1" "blue")
-		     (array "1" "1" "blue")
-		     (array "1" "0" "blue")))
+(assign "man" (array (array "0" "1" "wizard_blue")
+		     (array "0" "3" "wizard_blue")
+		     (array "1" "2" "wizard_blue")
+		     (array "2" "3" "wizard_blue")
+		     (array "2" "1" "wizard_blue")
+		     (array "1" "1" "wizard_blue")
+		     (array "1" "0" "wizard_blue")))
 
 
 (assign "wizard" (array))
 
 
-(assign "x" (array (array "0" "0" "blue")
-		   (array "0" "2" "blue")
-		   (array "1" "1" "blue")
-		   (array "2" "2" "blue")
-		   (array "2" "0" "blue")))
+(assign "x" (array (array "0" "0" "wizard_blue")
+		   (array "0" "2" "wizard_blue")
+		   (array "1" "1" "wizard_blue")
+		   (array "2" "2" "wizard_blue")
+		   (array "2" "0" "wizard_blue")))
 
 
 (assign "diagonal_line"
 	(array
-	 (array "0" "0" "blue")
-	 (array "1" "1" "blue")
-	 (array "2" "2" "blue")
-	 (array "3" "3" "blue")
-	 (array "4" "4" "blue")
-	 (array "5" "5" "blue")
+	 (array "0" "0" "wizard_blue")
+	 (array "1" "1" "wizard_blue")
+	 (array "2" "2" "wizard_blue")
+	 (array "3" "3" "wizard_blue")
+	 (array "4" "4" "wizard_blue")
+	 (array "5" "5" "wizard_blue")
 	 ))
 
 
@@ -908,4 +967,3 @@
 		(call "restore_terminal")
 		(call "restore_terminal_mode")
 		(call (d "sys" "exit") "0")))
-
