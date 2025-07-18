@@ -1,3 +1,4 @@
+
 ;;/*
 ;;
 ;;                    GNU GENERAL PUBLIC LICENSE
@@ -715,6 +716,7 @@
 (assign "screen_width" "320")
 (assign "screen_height" "162")
 (assign "screen" (array))
+
 (for
  (in "r" (range "screen_height"))
 	   (assign "row_data" (array))
@@ -727,10 +729,6 @@
 					;occupant pixels contain the individual pixels of sprites as well
 					;as other information such as collision info and hitbox info
 			     "occupant_pixels" (array)
-
-					;this defines the enties whos top left corner or "0" "0" coordinates are
-					;located in this screen_data
-			     "occupant_entities" (array)
 
 
 					;this defines the last color that was drawn to the screen to prevent from
@@ -761,38 +759,32 @@
   (setup_terminal)
 
 
-					;draw character into the game for the first time
-  (foreground_sprite "0" "0" "sprite_foo")
-
-
-					;x y coordinates of character
-  (assign "positionx" "0")
-  (assign "positiony" "0")
 
 
 					;main game loop
-  (assign "continue2" "True")
+
   (assign "player_id" (construct_player))
+  (assign "continue2" "True")
   (while "continue2"
 
 					;controls
 	 (for (in "i" (range "100"))
        	      (assign "key" (get_char_non_blocking))
       	      (if (equal "key" (string "q"))
-		  (assign "continue2" false))
+		  (assign "continue2" (false)))
 	      (else_if (equal "key" (string "w"))
-		       ((dot "global_entity_list" "player_id" "move") "up")
+		       ((access "global_entity_list" "player_id" (string "move")) (string "up"))
 
 		       )
 	      (else_if (equal "key" (string "a"))
-		       ((dot "global_entity_list" "player_id" "move") "left")
+		       ((access "global_entity_list" "player_id" (string "move")) (string "left"))
 		       )
 
 	      (else_if (equal "key" (string "s"))
-		       ((dot "global_entity_list" "player_id" "move") "down")				
+		       ((access "global_entity_list" "player_id" (string "move")) (string "down"))				
 		       )
 	      (else_if (equal "key" (string "d"))
-		       ((dot "global_entity_list" "player_id" "move") "right")				
+		       ((access "global_entity_list" "player_id" (string "move")) (string "right"))
 		       )
 
 	      )
@@ -805,12 +797,12 @@
 
 	  )
 
-
+	 )
 					;prepare terminal for its normal operatina again
 	 (restore_terminal)
 	 "pass"
 	 
-	 )
+
 
 
   )
@@ -827,7 +819,7 @@
 	   (assign "_fd" ( (dot "sys" "stdin" "fileno")))
 	   (assign "_original_terminal_settings" ( (dot "termios" "tcgetattr") "_fd"))
 	   (assign "new_settings" ( (dot "termios" "tcgetattr") "_fd"))
-	   (assign (access "new_settings" "3") (set_intersection (access "new_settings" "3") (tilda (set_union (dot "termios" "ICANON") (dot "termios" "ECHO")))))
+	   (assign (access "new_settings" "3") (set_intersection (access "new_settings" "3") (tilda (verticaal_bar (dot "termios" "ICANON") (dot "termios" "ECHO")))))
 	   (assign (access "new_settings" "6" (dot "termios" "VMIN")) "0")
 	   (assign (access "new_settings" "6" (dot "termios" "VTIME")) "0")
 	   ( (dot "termios" "tcsetattr") "_fd" (dot "termios" "TCSANOW") "new_settings")
@@ -887,33 +879,39 @@
 
 					;render screen for one frame
 (define "draw_screen" (list)
-(for (in "r" (range (integer-divide "screen_height" "2")))
+(for (in "r" (range (integer_divide "screen_height" "2")))
      (for (in "c" (range "screen_width"))
 
-	  (assign "top_location" (accesss "screen" (multiply "r" "2") "c"))
-	  (assign "bottom_location" (accesss "screen" (add "1" (multiply "r" "2")) "c"))
+
+	  
+	  (assign "screen_r" (multiply "r" "2"))
+	  (assign "screen_c" "c")
+	  
+
+	  (assign "top_location" (access "screen" "screen_r" "screen_c"))
+	  (assign "bottom_location" (access "screen" (add "1" "screen_r") "screen_c"))
 	  
 
 	  (assign "highest_top_occupant_depth" "0")
 	  (assign "highest_top_occupant_color" "black")
-	  (for (in "top_occupant" (accesss "top_location" "occupant_pixels"))
-	       (if (greater_than (access "top_occupant" "1" "display_depth")
-				 "highest_top_occupant_color")
-		   (assign "highest_top_occupant_color" (access "top_occupant" "0"))))
+	  (for (in "top_occupant" (access "top_location" "occupant_pixels"))
+	       (if (greater_than (access "top_occupant" (string "display_depth"))
+				 "highest_top_occupant_depth")
+		   (assign "highest_top_occupant_color" (access "top_occupant" (string "screen") "screen_r" "screen_c"))))
 
 
 
 
 	  (assign "highest_bottom_occupant_depth" "0")
-	  (assign "highest_bottm_occupant_color" "black")
+	  (assign "highest_bottom_occupant_color" "black")
 
 
-	  (for (in "bottom_occupant" (accesss "bottom_location" "occupant_pixels"))
-	       (if (greater_than (access "bottom_occupant" "1" "display_depth")
-				 "highest_bottom_occupant_color")
-		   (assign "highest_bottom_occupant_color" (access "top_occupant" "0"))))
+	  (for (in "bottom_occupant" (access "bottom_location" "occupant_pixels"))
+	       (if (greater_than (access "bottom_occupant" "1" (string "display_depth"))
+				 "highest_bottom_occupant_depth")
+		   (assign "highest_bottom_occupant_color" (access "bottom_occupant" (string "screen") (add "1" "screen_r") "screen_c"))))
 
-	  (if (or (not_equal "highest_top_occupant_color"  (access "top_location" "last_color")) (not_equal "highest_bottom_occupant_color"  (access "bottom_location" "last_color")))
+	  (if (or (not_equal "highest_top_occupant_color"  (dot "top_location" "last_color")) (not_equal "highest_bottom_occupant_color"  (dot "bottom_location" "last_color")))
 
 	      (pixels "c" "r" "highest_top_occupant_color" "highest_bottom_occupant_color")
 
@@ -930,6 +928,7 @@
 ;enumerables
 (assign "last_enumerable" "0")
 (define "new_enumerable" (list)
+  (global "last_enumerable")
 	   (assign "last_enumerable" (add "last_enumerable" "1"))
 	   (return (subtract "last_enumerable" "1")))
 
@@ -973,46 +972,54 @@
 
 (define "construct_player" (list)
 
-  (assign "player_id" "new_enumerable")
+  (assign "player_id" (new_enumerable))
 
   (define "teleport_on_screen"
 
     (list "x" "y")
 
-    (assign "width" (dot "global_entity_list" "player_id" "collision" "width"))
+    (assign "collision" (access "global_entity_list" "player_id" (string "collision")))
 
-    (assign "height" (dot "global_entity_list" "player_id" "collision" "height"))
+
 
     
 
     ;check if the player isnt walking offscreen
-    (if (and (greater_than "x"  "0") (and (not (greater_than "y"  "0")) (and (less_than (add "x" "width") "screen_width") (less_than (add "y" "height") "screen_height"))))
+    (if (and (greater_than "x"  "-1") (and (greater_than "y"  "-1") (and (less_than (add "x" "width") "screen_width") (less_than (add "y" "height") "screen_height"))))
 
 	;check if the player can move to the location
 	(assign "can_move" (true))
+	(assign "player" (access "global_entity_ist" "player_id"))
 	
-	(assign "collision_type" (dot "global_entity_list" "player_id" "collision" "type"))
-	(for (in "width_unit" (range "width"))
-	     (for (in "hieght_unit" (range "height"))
-		  (for (in "occupant" (access "screen" (add "y" "height_unit" ) (add "x" "width_unit")))
-		       (if (equal (access "occupant" "collision" "type") "player")
+	(assign "collision_type" (dot "player" "collision" "type"))
+	(for (in "r" (range (access "collision" (string "length"))))
+	     (for (in "c" (range (access "collision" "r")))
+		  (for (in "occupant_collision" (access "screen" (add "y" "r" ) (add "x" "c") (string "occupant_pixels") "1" (string "collision")))
+					;I would like to change this logic so that I can remove the checks to see of collision is nothing with no cost
+					; I may have to change this so that there are more than one type of collision
+		       (if (and (not_equal (access "collision" "r" "c") (string "nothing")) (and (not_equal (access "collision" "r" "c") (string "nothing")) (equal (access "collision" "r" "c") (access "occupant_collision" "r" "c"))))
 			   (assign "can_move" (false))))))
 
 
 	;move the player to the location
 	(if "can_move"
-	    (assign (dot "global_entity_list" "player_id" "position_x") "x")
-	    (assign (dot "global_entity_list" "player_id" "position_y") "y")
-	    (assign "dimensions"
-		    (dot (access (dot "global_entity_list" "player_id" "animations" "idle") "0") "frame"))
+	    (assign (access "player" (string "position_x")) "x")
+	    (assign (access  (string "global_entity_list") "player_id" (string "position_y")) "y")
+	    (assign "dimensions" (dot (access (access "player" (string "animations") (string "idle")) "0") "frame"))
 
-	    (assign "old_x" (dot "global_entity_list" "player_id" "position_x"))
-	    (assign "old_y" (dot "global_entity_list" "player_id" "position_y"))
-	    (for (in "x_unit" (range "dimensions"))
-		 (for (in "y_unit" (range (access "dimensions" "0")))
-		      ((dot (access "screen" (add "old_y" "y_unit") (add "old_x" "x_unit") "occupant_pixels") "pop") "player_id")
-		      (assign (access "screen" (add "y" "y_unit") (add "x" "x_unit") "occupant_pixels" "player_id") (access "global_entity_list" "player_id"))
+	    (assign "old_x" (access "player" (string "position_x")))
+	    (assign "old_y" (access "player" (string "position_y")))
+	    (for (in "x_unit" (range (access "dimensions" (string "length"))))
+		 (for (in "y_unit" (range (access "dimensions" "x_unit")))
+		      (assign "new_color" (access "dimensions" "x_unit" "y_unit"))
+		      (if (not (are_colors_equal "new_color" "transparent"))
+					;I dont like how I have to do four operations here i feel like I can do this in two operations
+			  ((access "screen" (add "old_y" "y_unit") (add "old_x" "x_unit") (string "occupant_pixels") "remove") "player_id")
+			  (assign (access "player" (string "screen") (add "old_y" "y_unit") (add "old_x" "x_unit")) "transparent")
+			  (assign (access "screen" (add "y" "y_unit") (add "x" "x_unit") (string "occupant_pixels") "player_id") "player")
+			  (assign (access "player" (string "screen") (add "y" "y_unit") (add "x" "x_unit")) "new_color")
 
+			  )
 		      )
 		 )
 	    )
@@ -1023,19 +1030,20 @@
 
   (define "move"
     (list "direction")
-    (assign "position_x" (dot "global_entity_list" "player_id" "position_x"))
-    (assign "position_y" (dot "global_entity_list" "player_id" "position_y"))
-    (if (equal "direction" "up")
-	((dot "global_entity_list" "player_id" "teleport_on_screen") "position_x" (add "position_y" "1")))
+    (assign "player" (access "global_entity_list" "player_id"))
+    (assign "position_x" (dot "player" "position_x"))
+    (assign "position_y" (dot "player" "position_y"))
+    (if (equal "direction" (string "up"))
+	((access "global_entity_list" "player_id" (string "teleport_on_screen")) "position_x" (subtract "position_y" "1")))
 
-    (else_if (equal "direction" "down")
-	     ((dot "global_entity_list" "player_id" "teleport_on_screen") "position_x" (subtract "position_y" "1")))
+    (else_if (equal "direction" (string "down"))
+	     ((access "global_entity_list" "player_id" (string "teleport_on_screen")) "position_x" (add "position_y" "1")))
 
-    (else_if (equal "direction" "left")
-	     ((dot "global_entity_list" "player_id" "teleport_on_screen") (subtract "position_x" "1") "position_y" ))
+    (else_if (equal "direction" (string "left"))
+	     ((access "global_entity_list" "player_id" (string "teleport_on_screen")) (subtract "position_x" "1") "position_y" ))
     
-    (else_if (equal "direction" "right")
-	     ((dot "global_entity_list" "player_id" "teleport_on_screen") (add "position_x" "1") "position_y" ))
+    (else_if (equal "direction" (string "right"))
+	     ((access "global_entity_list" "player_id" (string "teleport_on_screen")) (add "position_x" "1") "position_y" ))
     )
   
 
@@ -1043,7 +1051,7 @@
 
   
 
- (assign (dot "global_entity_list" "player_id") (dictionary
+  (assign (access "global_entity_list" "player_id") (dictionary
 
 		(string "animations")
 
@@ -1096,6 +1104,10 @@
 			 "move"
 
 			 )
+
+
+		(string "display_depth")
+		"2"
 		)
 	 )
  (return "player_id")
