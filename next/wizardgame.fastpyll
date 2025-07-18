@@ -1,4 +1,3 @@
-
 ;;/*
 ;;
 ;;                    GNU GENERAL PUBLIC LICENSE
@@ -720,10 +719,10 @@
  (in "r" (range "screen_height"))
 	   (assign "row_data" (array))
 	   (for (in "c" (range "screen_width"))
-		((dot "row_data" "append"))
+		((dot "row_data" "append")
 			    
 					;this defines the structure of screen_data
-			    (dictionary
+			    (dot_dictionary
 
 					;occupant pixels contain the individual pixels of sprites as well
 					;as other information such as collision info and hitbox info
@@ -740,6 +739,7 @@
 
 			     )
 			    )
+		)
 
 
 
@@ -748,72 +748,72 @@
 
 					;finish drawing screen
 	   ((dot "screen" "append") "row_data"))
-;
-;
-;
-;	   
-;
-;;main	   
-;(define "main" (list)
-;
-;	   ;prepare terminal for drawing
-;	   (set_terminal_raw_mode)
-;	   (setup_terminal)
-;
-;
-;	   ;draw character into the game for the first time
-;	   (foreground_sprite "0" "0" "sprite_foo")
-;
-;
-;	   ;x y coordinates of character
-;	   (assign "positionx" "0")
-;	   (assign "positiony" "0")
-;
-;
-;	   ;main game loop
-;	   (assign "continue2" "True")
-;	   (assign "player_id" (construct_player))
-;	   (while "continue2"
-;
-;					;controls
-;		  (for (in "i" (range "100"))
-;		       (assign "key" (get_char_non_blocking))
-;		       (if (equal "key" (string "q"))
-;			   (assign "continue2" false))
-;		       (else_if (equal "key" (string "w"))
-;				((dot "global_entity_list" "player_id" "move") "up")
-;
-;				)
-;		       (else_if (equal "key" (string "a"))
-;				((dot "global_entity_list" "player_id" "move") "left")
-;				)
-;
-;		       (else_if (equal "key" (string "s"))
-;				((dot "global_entity_list" "player_id" "move") "down")				
-;				)
-;		       (else_if (equal "key" (string "d"))
-;				((dot "global_entity_list" "player_id" "move") "right")				
-;				)
-;
-;		       )
-;
-;
-;
-;			;render screen for one frame
-;			(draw_screen)
-;			((d "time" "sleep") "0.05"
-;
-;			)
-;
-;
-;	   ;prepare terminal for its normal operatina again
-;	   (restore_terminal)
-;	   "pass"
-;			
-;	   )
 
 
 
+	   
+
+;main	   
+(define "main" (list)
+
+					;prepare terminal for drawing
+  (set_terminal_raw_mode)
+  (setup_terminal)
+
+
+					;draw character into the game for the first time
+  (foreground_sprite "0" "0" "sprite_foo")
+
+
+					;x y coordinates of character
+  (assign "positionx" "0")
+  (assign "positiony" "0")
+
+
+					;main game loop
+  (assign "continue2" "True")
+  (assign "player_id" (construct_player))
+  (while "continue2"
+
+					;controls
+	 (for (in "i" (range "100"))
+       	      (assign "key" (get_char_non_blocking))
+      	      (if (equal "key" (string "q"))
+		  (assign "continue2" false))
+	      (else_if (equal "key" (string "w"))
+		       ((dot "global_entity_list" "player_id" "move") "up")
+
+		       )
+	      (else_if (equal "key" (string "a"))
+		       ((dot "global_entity_list" "player_id" "move") "left")
+		       )
+
+	      (else_if (equal "key" (string "s"))
+		       ((dot "global_entity_list" "player_id" "move") "down")				
+		       )
+	      (else_if (equal "key" (string "d"))
+		       ((dot "global_entity_list" "player_id" "move") "right")				
+		       )
+
+	      )
+
+
+
+					;render screen for one frame
+	 (draw_screen)
+	 ((dot "time" "sleep") "0.05"
+
+	  )
+
+
+					;prepare terminal for its normal operatina again
+	 (restore_terminal)
+	 "pass"
+	 
+	 )
+
+
+  )
 					;prepare terminal for drawing
 (define "setup_terminal" (list)
 	   ((dot "sys" "stdout""write") (fstring "{csi}?25l"))
@@ -844,7 +844,7 @@
 	   (if (and (not (equal "final_row" (none))) (not (equal "final_col" (none))))
 		      ( (dot "sys" "stdout" "write") (fstring "{csi}{final_row};{final_col}H")))
 	   
-	   (pelse
+	   (else
 		      (assign "foo" (multiply "2" (dot "os" "linesep")))
 		      ( (dot "sys" "stdout" "write") (fstring "{foo}")))
 	   ( (dot "sys" "stdout" "write") (fstring "{csi}?25h"))
@@ -940,11 +940,12 @@
 
 					;tags for enums
 ;change these to more wizardly tags
-(assign "tag_table" (array "caffine" "dog" "spike" "yellow" "behemoth" "lever" "melon" "dynamo" "clever" "rebuttle" "yoink" "sploosh" "deleware" "arkansas" "melancholy" "apricot" "orange" "tangerene" "vorple" "daisychain" "tendril"))
+;(assign "tag_table" (array (string"caffiene" "dog" "spike" "yellow" "behemoth" "lever" "melon" "dynamo" "clever" "rebuttle" "yoink" "sploosh" "deleware" "arkansas" "melancholy" "apricot" "orange" "tangerene" "vorple" "daisychain" "tendril"))
 (define "get_unique_tag" (list "number")
 					;when I need this I may implement it
 
-;     second_to_last_bit = (number >> bit_index) & bit_index
+					;     second_to_last_bit = (number >> bit_index) & bit_index
+  (return (string "this isnt implemented yet"))
      )
 
 
@@ -978,9 +979,9 @@
 
     (list "x" "y")
 
-    (assign "width" (access (dot "global_entity_list" "player_id" "collision" "width")))
+    (assign "width" (dot "global_entity_list" "player_id" "collision" "width"))
 
-    (assign "height" (access (dot "global_entity_list" "player_id" "collision" "hieght")))
+    (assign "height" (dot "global_entity_list" "player_id" "collision" "height"))
 
     
 
@@ -990,7 +991,7 @@
 	;check if the player can move to the location
 	(assign "can_move" (true))
 	
-	(assign "collision_type" (dot (access (dot "global_entity_list" "player_id" "collision" "type"))))
+	(assign "collision_type" (dot "global_entity_list" "player_id" "collision" "type"))
 	(for (in "width_unit" (range "width"))
 	     (for (in "hieght_unit" (range "height"))
 		  (for (in "occupant" (access "screen" (add "y" "height_unit" ) (add "x" "width_unit")))
@@ -1003,7 +1004,7 @@
 	    (assign (dot "global_entity_list" "player_id" "position_x") "x")
 	    (assign (dot "global_entity_list" "player_id" "position_y") "y")
 	    (assign "dimensions"
-		    (dot (access (dot "global_entity_list" "player_id" "animations" "idle" "0")) "frame"))
+		    (dot (access (dot "global_entity_list" "player_id" "animations" "idle") "0") "frame"))
 
 	    (assign "old_x" (dot "global_entity_list" "player_id" "position_x"))
 	    (assign "old_y" (dot "global_entity_list" "player_id" "position_y"))
